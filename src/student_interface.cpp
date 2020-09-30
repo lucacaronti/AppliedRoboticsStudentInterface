@@ -6,7 +6,8 @@
 namespace student {
 
  void loadImage(cv::Mat& img_out, const std::string& config_folder){  
-   throw std::logic_error( "STUDENT FUNCTION - LOAD IMAGE - NOT IMPLEMENTED" );
+    
+   //throw std::logic_error( "STUDENT FUNCTION - LOAD IMAGE - NOT IMPLEMENTED" );
  }
 
  void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
