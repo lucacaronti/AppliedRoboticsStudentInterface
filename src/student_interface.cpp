@@ -7,7 +7,7 @@
 namespace student {
 
  void loadImage(cv::Mat& img_out, const std::string& config_folder){  
-  
+
   img_out = cv::imread(config_folder); // load the image
   
   //if fail to read the image
