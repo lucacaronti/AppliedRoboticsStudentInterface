@@ -1,12 +1,20 @@
 #include "student_image_elab_interface.hpp"
 #include "student_planning_interface.hpp"
 
+
 #include <stdexcept>
 #include <sstream>
 namespace student {
 
  void loadImage(cv::Mat& img_out, const std::string& config_folder){  
-   throw std::logic_error( "STUDENT FUNCTION - LOAD IMAGE - NOT IMPLEMENTED" );
+  
+  img_out = cv::imread(config_folder); // load the image
+  
+  //if fail to read the image
+  if ( img_out.empty() ) 
+  { 
+    throw std::logic_error( "STUDENT FUNCTION - LOAD IMAGE - UNABLE TO LOAD THE IMAGE" + config_folder );
+  }
  }
 
  void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
