@@ -6,7 +6,7 @@
 #include <sstream>
 namespace student {
 
- void loadImage(cv::Mat& img_out, const std::string& config_folder){  
+  void loadImage(cv::Mat& img_out, const std::string& config_folder){  
 
   img_out = cv::imread(config_folder); // load the image
   
@@ -17,8 +17,22 @@ namespace student {
   }
  }
 
+ int imgCounter = 0;
+
  void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
-    throw std::logic_error( "STUDENT FUNCTION - IMAGE LISTENER - NOT CORRECTLY IMPLEMENTED" );
+
+    char c;
+    cv::imshow(topic, img_in);
+    c = cv::waitKey(30);
+
+    if (c == 's') {
+      std::string fileName = config_folder + "/img_" + std::to_string(imgCounter) + ".jpg"
+      cv::imwrite(fileName, img_in);
+      std::cout << "Saved image " << fileName << std::endl;
+      imgCounter++;
+    }
+
+    //throw std::logic_error( "STUDENT FUNCTION - IMAGE LISTENER - NOT CORRECTLY IMPLEMENTED" );
   }
 
   bool extrinsicCalib(const cv::Mat& img_in, std::vector<cv::Point3f> object_points, const cv::Mat& camera_matrix, cv::Mat& rvec, cv::Mat& tvec, const std::string& config_folder){
