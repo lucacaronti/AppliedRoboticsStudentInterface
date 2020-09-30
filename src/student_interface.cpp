@@ -21,8 +21,12 @@ namespace student {
 
  void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
 
+  
+
+    cv::imshow(topic, img_in); // show the image
+
+    // wait for a key & save if 's'
     char c;
-    cv::imshow(topic, img_in);
     c = cv::waitKey(30);
 
     if (c == 's') {
