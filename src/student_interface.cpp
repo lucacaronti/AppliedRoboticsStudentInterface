@@ -30,7 +30,7 @@ namespace student {
     c = cv::waitKey(30);
 
     if (c == 's') {
-      std::string fileName = config_folder + "/img_" + std::to_string(imgCounter) + ".jpg";
+      std::string fileName = config_folder + "/img_" + topic + "_" + std::to_string(imgCounter) + ".jpg";
       cv::imwrite(fileName, img_in);
       std::cout << "Saved image " << fileName << std::endl;
       imgCounter++;
