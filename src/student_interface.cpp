@@ -10,14 +10,23 @@ namespace student {
 
   void loadImage(cv::Mat& img_out, const std::string& config_folder){  
 
-  img_out = cv::imread(config_folder); // load the image
-  
-  //if fail to read the image
-  if ( img_out.empty() ) 
-  { 
-    throw std::logic_error( "STUDENT FUNCTION - LOAD IMAGE - UNABLE TO LOAD THE IMAGE" + config_folder );
+    std::cout<<"****************************************************"<<std::endl;
+    std::cout<<"Enter the name of image to load, use relative( "<< config_folder << " ) path or absolute path: "<<std::endl;
+    std::string image_path;
+    std::cin >> image_path;
+
+    if(image_path[0] != '/'){
+      image_path += config_folder;
+    }
+
+    img_out = cv::imread(image_path); // load the image
+    
+    //if fail to read the image
+    if ( img_out.empty() ) 
+    { 
+      throw std::logic_error( "STUDENT FUNCTION - LOAD IMAGE - UNABLE TO LOAD THE IMAGE" + image_path );
+    }
   }
- }
 
  int imgCounter = 0;
 
@@ -74,6 +83,7 @@ namespace student {
 
 struct mouseCallbackUserData_t{
   std::vector<cv::Point2f>* points;
+  const cv::Mat* image;
   int points_counter;
   int num_points_to_take;
   std::atomic<bool> done;
@@ -87,6 +97,10 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata){
     if(mouseCallbackUserData->points_counter == mouseCallbackUserData->num_points_to_take){
         mouseCallbackUserData->done.store(true);
     }
+
+    cv::circle(*(mouseCallbackUserData->image), cv::Point(x,y), 20, cv::Scalar(0,0,255), -1);
+    //show the image
+    cv::imshow("Image", *(mouseCallbackUserData->image));
   }
 }
 
@@ -95,6 +109,8 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
   mouseCallbackUserData_t mouseCallbackUserData;
   mouseCallbackUserData.points = &allPoints;
   mouseCallbackUserData.num_points_to_take = num_points_to_take;
+  // mouseCallbackUserData.done.store(false);
+  mouseCallbackUserData.image = &image;
 
   //Create a window
   cv::namedWindow("Image", 1);
@@ -106,8 +122,10 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
   cv::imshow("Image", image);
 
   while (!mouseCallbackUserData.done.load()) {
-    cv::waitKey(500);
+    cv::waitKey(50);
   }
+
+  cv::destroyAllWindows();
 }
 
   bool extrinsicCalib(const cv::Mat& img_in, std::vector<cv::Point3f> object_points, const cv::Mat& camera_matrix, cv::Mat& rvec, cv::Mat& tvec, const std::string& config_folder){
@@ -118,7 +136,7 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
 
     std::vector<cv::Point2f> image_points; // Define image points type
     std::cout<<"[DEBUG] try to find conf file: "<< extrinsicCalibFilePath <<std::endl;
-    Check if configuration file already exists
+    // Check if configuration file already exists
     if(std::experimental::filesystem::exists(extrinsicCalibFilePath)){
       std::cout<<"[DEBUG] found conf file: "<< extrinsicCalibFilePath <<std::endl;
       std::fstream confFileIn; // Define configuration file to read
@@ -170,6 +188,7 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
     cv::Mat dist_coeffs = cv::Mat1d::zeros(1,4);
     bool ok = cv::solvePnP(object_points, image_points, camera_matrix, dist_coeffs, rvec, tvec);
     return ok;
+    }
   }
 
   void imageUndistort(const cv::Mat& img_in, cv::Mat& img_out, 
