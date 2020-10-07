@@ -224,7 +224,13 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
                         const cv::Mat& tvec, const std::vector<cv::Point3f>& object_points_plane, 
                         const std::vector<cv::Point2f>& dest_image_points_plane, 
                         cv::Mat& plane_transf, const std::string& config_folder){
-    throw std::logic_error( "STUDENT FUNCTION - FIND PLANE TRANSFORM - NOT IMPLEMENTED" );  
+    cv::Mat image_points;
+
+    // project points
+    cv::projectPoints(object_points_plane, rvec, tvec, cam_matrix, cv::Mat(), image_points);
+
+    plane_transf = cv::getPerspectiveTransform(image_points, dest_image_points_plane);
+    //throw std::logic_error( "STUDENT FUNCTION - FIND PLANE TRANSFORM - NOT IMPLEMENTED" );  
   }
 
 
