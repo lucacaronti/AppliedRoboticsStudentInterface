@@ -224,13 +224,20 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
                         const cv::Mat& tvec, const std::vector<cv::Point3f>& object_points_plane, 
                         const std::vector<cv::Point2f>& dest_image_points_plane, 
                         cv::Mat& plane_transf, const std::string& config_folder){
-    throw std::logic_error( "STUDENT FUNCTION - FIND PLANE TRANSFORM - NOT IMPLEMENTED" );  
+    cv::Mat image_points;
+
+    // project points
+    cv::projectPoints(object_points_plane, rvec, tvec, cam_matrix, cv::Mat(), image_points);
+
+    plane_transf = cv::getPerspectiveTransform(image_points, dest_image_points_plane);
+    //throw std::logic_error( "STUDENT FUNCTION - FIND PLANE TRANSFORM - NOT IMPLEMENTED" );  
   }
 
 
-void unwarp(const cv::Mat& img_in, cv::Mat& img_out, const cv::Mat& transf, 
+  void unwarp(const cv::Mat& img_in, cv::Mat& img_out, const cv::Mat& transf, 
             const std::string& config_folder){
-    throw std::logic_error( "STUDENT FUNCTION - UNWRAP - NOT IMPLEMENTED" );   
+    cv::warpPerspective(img_in, img_out, transf, img_in.size());
+    //throw std::logic_error( "STUDENT FUNCTION - UNWRAP - NOT IMPLEMENTED" );   
   }
 
   bool processMap(const cv::Mat& img_in, const double scale, std::vector<Polygon>& obstacle_list, std::vector<std::pair<int,Polygon>>& victim_list, Polygon& gate, const std::string& config_folder){
