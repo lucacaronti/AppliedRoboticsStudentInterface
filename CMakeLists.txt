@@ -67,3 +67,14 @@ target_link_libraries(demo_full_example
 target_link_libraries(demo_simple_shape_detection
   ${OpenCV_LIBRARIES}
 )
+
+# COMPILE STUDET FUNCTIONS
+include_directories(
+  inc
+)
+add_executable(processMap
+  src/processMap.cpp
+)
+target_link_libraries(processMap
+  ${OpenCV_LIBRARIES}
+)

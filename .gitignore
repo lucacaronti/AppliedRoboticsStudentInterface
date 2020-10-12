@@ -36,3 +36,7 @@ build/
 
 # Visual studio code
 .vscode*
+
+# Documentation
+doc/latex/
+doc/html/

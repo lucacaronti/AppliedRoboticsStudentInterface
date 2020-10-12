@@ -1,5 +1,6 @@
 #include "student_image_elab_interface.hpp"
 #include "student_planning_interface.hpp"
+#include "processMap.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <experimental/filesystem>
@@ -8,6 +9,19 @@
 #include <sstream>
 namespace student {
 
+  /**
+   * \author Luca Caronti and Riccardo Scilla
+   * \version 1.0
+   * \date 06-10-2020
+   * \mainpage Implementation of functions for Robot Planning course a.y. 2020-2021
+  */
+
+  /*!
+  * \brief This function can be used to replace the simulator camera and test the 
+  * developed pipeline on a set of custom image
+  * \param[out] image_out      The loaded raw image 
+  * \param[in]  config_folder  A custom string from config file.
+  */
   void loadImage(cv::Mat& img_out, const std::string& config_folder){  
 
     std::cout<<"****************************************************"<<std::endl;
@@ -30,7 +44,13 @@ namespace student {
 
  int imgCounter = 0;
 
- void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
+  /*!
+  * \brief Generic listener used from the image listener node. 
+  * \param[in] image_in       Input image to store
+  * \param[in] topic          Topic from where the image is taken
+  * \param[in] config_folder  A custom string from config file.
+  */
+  void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
 
   
 
@@ -128,6 +148,16 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
   cv::destroyAllWindows();
 }
 
+
+  /*!
+  * \brief Finds arena pose from 3D(object_points)-2D(image_in) point correspondences.
+  * \param[in]  image_in       Input image to store
+  * \param[in]  object_points  3D position of the 4 corners of the arena, following a counterclockwise order starting from the one near the red line.
+  * \param[in]  camera_matrix  3x3 floating-point camera matrix 
+  * \param[out] rvec           Rotation vectors estimated linking the camera and the arena
+  * \param[out] tvec           Translation vectors estimated for the arena
+  * \param[in]  config_folder  A custom string from config file.
+  */
   bool extrinsicCalib(const cv::Mat& img_in, std::vector<cv::Point3f> object_points, const cv::Mat& camera_matrix, cv::Mat& rvec, cv::Mat& tvec, const std::string& config_folder){
     std::cout<<"[DEBUG] entered in extrinsicCalib"<<std::endl;
     // Define the configuration file name
@@ -241,7 +271,7 @@ void selectNpoints(const cv::Mat& image, std::vector<cv::Point2f>& allPoints, in
   }
 
   bool processMap(const cv::Mat& img_in, const double scale, std::vector<Polygon>& obstacle_list, std::vector<std::pair<int,Polygon>>& victim_list, Polygon& gate, const std::string& config_folder){
-    throw std::logic_error( "STUDENT FUNCTION - PROCESS MAP - NOT IMPLEMENTED" );   
+    return student_processMap::processMap(img_in, scale, obstacle_list, victim_list, gate, config_folder); // see implementation in processMap.cpp
   }
 
   bool findRobot(const cv::Mat& img_in, const double scale, Polygon& triangle, double& x, double& y, double& theta, const std::string& config_folder){
