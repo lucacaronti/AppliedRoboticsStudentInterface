@@ -68,7 +68,7 @@ target_link_libraries(demo_simple_shape_detection
   ${OpenCV_LIBRARIES}
 )
 
-# COMPILE STUDET FUNCTIONS
+# COMPILE STUDENT FUNCTIONS
 include_directories(
   inc
 )
@@ -76,5 +76,11 @@ add_executable(processMap
   src/processMap.cpp
 )
 target_link_libraries(processMap
+  ${OpenCV_LIBRARIES}
+)
+add_executable(detectDigits
+  src/detectDigits.cpp
+)
+target_link_libraries(detectDigits
   ${OpenCV_LIBRARIES}
 )
