@@ -10,10 +10,16 @@ find_package(project_interface REQUIRED )
 ## Specify additional locations of header files
 include_directories(
  include 
+ inc
  ${OpenCV_INCLUDE_DIRS}
  ${project_interface_INCLUDE_DIRS}
 )
 
+add_library(
+  extrinsicCalib SHARED
+  src/extrinsicCalib.cpp
+  inc/extrinsicCalib.hpp
+)
 ## CREATE EXECUTABLE LIBRARY
 add_library(student SHARED
    src/student_interface.cpp
@@ -21,6 +27,7 @@ add_library(student SHARED
 
 target_link_libraries(student
   ${OpenCV_LIBRARIES}  
+  extrinsicCalib
 )
 
 ## COMPILE DEMO EXECUTABLE
@@ -68,13 +75,24 @@ target_link_libraries(demo_simple_shape_detection
   ${OpenCV_LIBRARIES}
 )
 
-# COMPILE STUDET FUNCTIONS
-include_directories(
-  inc
-)
+
+
 add_executable(processMap
   src/processMap.cpp
 )
 target_link_libraries(processMap
   ${OpenCV_LIBRARIES}
 )
+add_executable(findRobot
+  src/findRobot.cpp
+)
+target_link_libraries(findRobot
+  ${OpenCV_LIBRARIES}
+)
+#add_executable(extrinsicCalib
+#  src/extrinsicCalib.cpp
+#)
+#target_link_libraries(extrinsicCalib
+#  ${OpenCV_LIBRARIES}
+#  stdc++fs
+#)
