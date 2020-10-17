@@ -75,8 +75,10 @@ target_link_libraries(demo_simple_shape_detection
   ${OpenCV_LIBRARIES}
 )
 
-
-
+# COMPILE STUDENT FUNCTIONS
+include_directories(
+  inc
+)
 add_executable(processMap
   src/processMap.cpp
 )
@@ -96,3 +98,9 @@ target_link_libraries(findRobot
 #  ${OpenCV_LIBRARIES}
 #  stdc++fs
 #)
+add_executable(detectDigits
+  src/detectDigits.cpp
+)
+target_link_libraries(detectDigits
+  ${OpenCV_LIBRARIES}
+)
