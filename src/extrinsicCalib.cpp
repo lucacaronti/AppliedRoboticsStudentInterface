@@ -116,6 +116,7 @@ void selectNpoints(const cv::Mat &image, std::vector<cv::Point2f> &allPoints, in
     while (!mouseCallbackUserData.done.load()){
         cv::waitKey(50);
     }
+    cv::destroyWindow("Image");
 }
 
 bool student_extrinsicCalib(const cv::Mat &img_in, std::vector<cv::Point3f> object_points, const cv::Mat &camera_matrix, cv::Mat &rvec, cv::Mat &tvec, const std::string &config_folder){

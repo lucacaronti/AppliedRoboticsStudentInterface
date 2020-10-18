@@ -15,19 +15,15 @@ include_directories(
  ${project_interface_INCLUDE_DIRS}
 )
 
-add_library(
-  extrinsicCalib SHARED
-  src/extrinsicCalib.cpp
-  inc/extrinsicCalib.hpp
-)
 ## CREATE EXECUTABLE LIBRARY
 add_library(student SHARED
    src/student_interface.cpp
+   src/extrinsicCalib.cpp
+   src/findRobot.cpp
 )
 
 target_link_libraries(student
-  ${OpenCV_LIBRARIES}  
-  extrinsicCalib
+  ${OpenCV_LIBRARIES}
 )
 
 ## COMPILE DEMO EXECUTABLE
@@ -85,12 +81,12 @@ add_executable(processMap
 target_link_libraries(processMap
   ${OpenCV_LIBRARIES}
 )
-add_executable(findRobot
-  src/findRobot.cpp
-)
-target_link_libraries(findRobot
-  ${OpenCV_LIBRARIES}
-)
+# add_executable(findRobot
+#   src/findRobot.cpp
+# )
+# target_link_libraries(findRobot
+#   ${OpenCV_LIBRARIES}
+# )
 #add_executable(extrinsicCalib
 #  src/extrinsicCalib.cpp
 #)

@@ -40,3 +40,5 @@ build/
 # Documentation
 doc/latex/
 doc/html/
+doc/xml/
+doc/*.zip

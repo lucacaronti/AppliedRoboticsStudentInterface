@@ -33,7 +33,7 @@ cv::Point findVertex(const cv::Point& P1, const cv::Point& P2, const cv::Point& 
     else return P3;
 }
 
-bool student_findRobot::findRobot(const cv::Mat& img_in, const double scale, Polygon& triangle, double& x, double& y, double& theta, const std::string& config_folder){
+bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& triangle, double& x, double& y, double& theta, const std::string& config_folder){
     #ifdef DEBUG_ACTIVE
     cv::imshow("Original image", img_in);
     cv::waitKey();
@@ -132,6 +132,8 @@ bool student_findRobot::findRobot(const cv::Mat& img_in, const double scale, Pol
 
     /* colculate theta */
     theta = atan2(cx-vertex.x, cy-vertex.y);
+    x = cx;
+    y = cy;
 
     #ifdef DEBUG_ACTIVE
     std::cout<<"Theta: "<<theta<<std::endl;
@@ -167,7 +169,7 @@ int main(int argc, char* argv[]){
     Polygon triangle;
     double x,y, theta;
 
-    student_findRobot::findRobot(image, double(4), triangle, x, y, theta, "/tmp");
+    student_findRobot(image, double(4), triangle, x, y, theta, "/tmp");
 
     return 0;
 }

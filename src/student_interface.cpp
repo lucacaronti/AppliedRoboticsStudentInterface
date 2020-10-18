@@ -23,7 +23,7 @@ namespace student {
   * @param[in]  config_folder  A custom string from config file.
   */
   void loadImage(cv::Mat& img_out, const std::string& config_folder){  
-
+    std::cout<<"[STUDENT] : loadImage"<<std::endl;
     std::cout<<"****************************************************"<<std::endl;
     std::cout<<"Enter the name of image to load, use relative( "<< config_folder << " ) path or absolute path: "<<std::endl;
     std::string image_path;
@@ -32,7 +32,6 @@ namespace student {
     if(image_path[0] != '/'){
       image_path += config_folder;
     }
-
     img_out = cv::imread(image_path); // load the image
     
     //if fail to read the image
@@ -51,23 +50,17 @@ namespace student {
   * @param[in] config_folder  A custom string from config file.
   */
   void genericImageListener(const cv::Mat& img_in, std::string topic, const std::string& config_folder){
-
-  
-
+    std::cout<<"[STUDENT] : genericImageListener"<<std::endl;
     cv::imshow(topic, img_in); // show the image
-
     // wait for a key & save if 's'
     char c;
     c = cv::waitKey(30);
-
     if (c == 's') {
       std::string fileName = config_folder + "/img_" + topic + "_" + std::to_string(imgCounter) + ".jpg";
       cv::imwrite(fileName, img_in);
       std::cout << "Saved image " << fileName << std::endl;
       imgCounter++;
     }
-
-    //throw std::logic_error( "STUDENT FUNCTION - IMAGE LISTENER - NOT CORRECTLY IMPLEMENTED" );
   }
 
   /*!
@@ -81,19 +74,28 @@ namespace student {
   * @return[bool] false if there are some errors, true otherwise
   */
   bool extrinsicCalib(const cv::Mat& img_in, std::vector<cv::Point3f> object_points, const cv::Mat& camera_matrix, cv::Mat& rvec, cv::Mat& tvec, const std::string& config_folder){
+    std::cout<<"[STUDENT] : extrinsicCalib"<<std::endl;
     return student_extrinsicCalib(img_in, object_points, camera_matrix, rvec, tvec, config_folder);
   }
 
+  /*!
+  * Transforms an image to compensate for lens distortion.
+  * @param[in]  image_in       distorted image
+  * @param[out] image_out      undistorted image
+  * @param[in]  camera_matrix  3x3 floating-point camera matrix 
+  * @param[out] dist_coeffs    distortion coefficients [k1,k2,p1,p2,k3]
+  * @param[in]  config_folder  A custom string from config file.
+  */
   void imageUndistort(const cv::Mat& img_in, cv::Mat& img_out, 
           const cv::Mat& cam_matrix, const cv::Mat& dist_coeffs, const std::string& config_folder){
+    std::cout<<"[STUDENT] : imageUndistort"<<std::endl;
     static bool optimize = true;
 
     if (!optimize) {
       // Slow version
       cv::undistort(img_in, img_out, cam_matrix, dist_coeffs);
     }
-    else 
-    {
+    else{
       // Optimized version
       static bool init_undistort_map = false;
       static cv::Mat full_map1, full_map2;
@@ -102,28 +104,36 @@ namespace student {
         cv::Mat R;
         cv::initUndistortRectifyMap(cam_matrix, dist_coeffs, R, cam_matrix, 
                                 img_in.size(), CV_16SC2, full_map1, full_map2);
-
         init_undistort_map = true;
       }
       // Initialize output image
       cv::remap(img_in, img_out, full_map1, full_map2, cv::INTER_LINEAR);
     }
 
-    //throw std::logic_error( "STUDENT FUNCTION - IMAGE UNDISTORT - NOT IMPLEMENTED" );  
-
   }
 
+
+  /*!
+  * Calculates a perspective transform from four pairs of the corresponding points.
+  * @param[in]  camera_matrix  3x3 floating-point camera matrix 
+  * @param[in]  rvec           Rotation vectors estimated linking the camera and the arena
+  * @param[in]  tvec           Translation vectors estimated for the arena
+  * @param[in]  object_points_plane  3D position of the 4 corners of the arena, following a counterclockwise order starting from the one near the red line.  
+  * @param[in ] dest_image_points_plane   destinatino point in px of the object_points_plane
+  * @param[out] plane_transf   plane perspective trasform (3x3 matrix)
+  * @param[in]  config_folder  A custom string from config file.
+  */
   void findPlaneTransform(const cv::Mat& cam_matrix, const cv::Mat& rvec, 
                         const cv::Mat& tvec, const std::vector<cv::Point3f>& object_points_plane, 
                         const std::vector<cv::Point2f>& dest_image_points_plane, 
                         cv::Mat& plane_transf, const std::string& config_folder){
+    std::cout<<"[STUDENT] : findPlaneTranform"<<std::endl;
     cv::Mat image_points;
 
     // project points
     cv::projectPoints(object_points_plane, rvec, tvec, cam_matrix, cv::Mat(), image_points);
 
     plane_transf = cv::getPerspectiveTransform(image_points, dest_image_points_plane);
-    //throw std::logic_error( "STUDENT FUNCTION - FIND PLANE TRANSFORM - NOT IMPLEMENTED" );  
   }
 
   /*!
@@ -135,6 +145,7 @@ namespace student {
   */
   void unwarp(const cv::Mat& img_in, cv::Mat& img_out, const cv::Mat& transf, 
             const std::string& config_folder){
+    std::cout<<"[STUDENT] : unwarp"<<std::endl;
     cv::warpPerspective(img_in, img_out, transf, img_in.size());  
   }
 
@@ -148,6 +159,7 @@ namespace student {
   * @param[in]  config_folder  A custom string from config file.
   */
   bool processMap(const cv::Mat& img_in, const double scale, std::vector<Polygon>& obstacle_list, std::vector<std::pair<int,Polygon>>& victim_list, Polygon& gate, const std::string& config_folder){
+    std::cout<<"[STUDENT] : processMap"<<std::endl;
     return student_processMap::processMap(img_in, scale, obstacle_list, victim_list, gate, config_folder); // see implementation in processMap.cpp
   }
 
@@ -161,7 +173,8 @@ namespace student {
   * @param[in]  config_folder  A custom string from config file.
   */
   bool findRobot(const cv::Mat& img_in, const double scale, Polygon& triangle, double& x, double& y, double& theta, const std::string& config_folder){
-    throw std::logic_error( "STUDENT FUNCTION - FIND ROBOT - NOT IMPLEMENTED" );    
+    std::cout<<"[STUDENT] : findRobot"<<std::endl;
+    return student_findRobot(img_in, scale, triangle, x, y, theta, config_folder);
   }
 
   bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list, const std::vector<std::pair<int,Polygon>>& victim_list, const Polygon& gate, const float x, const float y, const float theta, Path& path){
