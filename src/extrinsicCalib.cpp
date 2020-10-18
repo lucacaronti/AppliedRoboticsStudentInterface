@@ -49,8 +49,8 @@ bool readCSV(std::fstream &file, std::vector<std::string> &string_vector, int &e
 }
 
 /*!
-  * \brief Write points into CSV file
-  * \param[in]     file        file in which save the points
+  * \brief Writes points into CSV file
+  * \param[out]     file        file in which save the points
   * \param[in]     points      vector of points
   */
 void writePointsCSV(std::fstream &file, std::vector<cv::Point2f> points){
