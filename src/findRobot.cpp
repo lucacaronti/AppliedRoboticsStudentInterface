@@ -37,7 +37,6 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #ifdef DEBUG_ACTIVE
     cv::imshow("Original image", img_in);
     cv::waitKey();
-    cv::destroyAllWindows();
     #endif
 
     /* convert image to HSV color space */
@@ -47,7 +46,6 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #ifdef DEBUG_ACTIVE
     cv::imshow("HSV image", img_hsv);
     cv::waitKey();
-    cv::destroyAllWindows();
     #endif
 
     /* define low and high blue thresold values */
@@ -140,11 +138,13 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     #ifdef DEBUG_ACTIVE
-    cv::drawContours(img_in, blue_polygons, -1, cv::Scalar(0,0,0), 1, cv::LINE_AA);
+    cv::drawContours(img_in, blue_polygons, -1, cv::Scalar(0,0,0), 3, cv::LINE_AA);
     // display che image
     cv::imshow("Image Contours", img_in);
     cv::waitKey();
     #endif
+
+    return true;
 }
 
 int main(int argc, char* argv[]){

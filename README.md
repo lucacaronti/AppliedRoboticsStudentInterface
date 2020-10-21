@@ -10,12 +10,14 @@
  Members                        | Descriptions                                
 --------------------------------|---------------------------------------------
 `namespace `[`student`](#namespacestudent) | Implemented funtions
+Extrinsic calib | Extrinsic calib support funtions
+Find Robot | Find robot support funtions 
 
 # namespace `student` 
 
 ## Summary
 
- Members (publics)                        | Descriptions                                
+ Members                        | Descriptions                                
 --------------------------------|---------------------------------------------
 `public void `[`loadImage`](#namespacestudent_1a3117c968a47bf95f86bdb813a3b64e56)`(cv::Mat & img_out,const std::string & config_folder)`            | This function can be used to replace the simulator camera and test the developed pipeline on a set of custom image.
 `public void `[`genericImageListener`](#namespacestudent_1a3b726e7af03a643c06dcde23057a82ea)`(const cv::Mat & img_in,std::string topic,const std::string & config_folder)`            | Generic listener used from the image listener node.
@@ -82,10 +84,12 @@ Finds arena pose from 3D(object_points)-2D(image_in) point correspondences.
 `[bool]` false if there are some errors, true otherwise
 
 ##### Operations done
+
 1. Check if file `[config_folder]/extrinsicCalibData.csv` exists.
    1. If file exists so it's read with funtion `readCSV`
    2. If file doesn't exist:
-      1. `selectNpoints` function is called.
+      1. `selectNpoints` function is called. (You must press your left key of mouse and select the 4 corners in counterclockwise, starting from the lower left corner)
+      <img src="doc/images/selectNpoints.png" width="350">
       2. Once N points are been selected, they are saved into CSV file thanks to function `writePointsCSV`
 2. `cv::solvePnp` funtion is called.
 
@@ -104,6 +108,13 @@ Transforms an image to compensate for lens distortion.
 * `dist_coeffs [out]` distortion coefficients [k1,k2,p1,p2,k3] 
 
 * `config_folder [in]` A custom string from config file.
+
+##### Results
+1. Distorted image
+<img src="./doc/images/imageUndistort_1.png" width="250">
+
+2. Undistorted image
+<img src="./doc/images/imageUndistort_2.png" width="250">
 
 ---
 
@@ -174,6 +185,26 @@ Process the image to detect the robot pose
 * `theta [out]` yaw of the robot in the arena reference system 
 
 * `config_folder [in]` A custom string from config file.
+
+##### Returns
+* `bool` true if the robot is found, false otherwise.
+
+##### Operations done
+Start image:
+<img src="./doc/images/find_robot_1.png" width="250">
+
+1. Image is converted from BGR to HSV color space
+<img src="./doc/images/find_robot_2.png" width="250">
+2. Blue mask is applied
+<img src="./doc/images/find_robot_3.png" width="250">
+3. `findContours` function is called to find blue object contours
+4. `approxPolyDB` function is called to approximate contours
+5. If there is only one object with 3 sides (triangle) so funtion can continue, othrewise the function return `false`. One future implementation can be that also if there are more than one blue object, the biggest one will be selected (if it's a triangle).
+6. Triangle coordinates are scaled and saved
+7. The center of triangle is found
+8. `findVertex` funtion is called in order to find the vertex of triangle
+9. Theta is calculated
+<img src="./doc/images/find_robot_4.png" width="250">
 
 ---
 

@@ -76,7 +76,7 @@ void CallBackFunc(int event, int x, int y, int flags, void *userdata){
         mouseCallbackUserData->points->emplace_back(x, y); // save coordinates
         mouseCallbackUserData->points_counter++; // increase counter
         // Draw a circle on pressed image
-        cv::circle(*(mouseCallbackUserData->image), cv::Point(x, y), 20, cv::Scalar(0, 255, 255), -1);
+        cv::circle(*(mouseCallbackUserData->image), cv::Point(x, y), 20, cv::Scalar(100, 100, 255), -1);
         //show the image
         cv::imshow("Image", *(mouseCallbackUserData->image));
 
