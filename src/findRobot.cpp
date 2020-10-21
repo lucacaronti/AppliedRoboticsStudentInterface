@@ -15,7 +15,7 @@ double findDistance(const cv::Point& P1, const cv::Point& P2){
 
 /*!
   * Find the vertex of a tringle (if it's equilater return P3)
-  * @param[in]  PI      firt point
+  * @param[in]  PI      first point
   * @param[in]  P2      second point
   * @param[in]  P3      third point
   * @return[cv::Point]  the vertex point

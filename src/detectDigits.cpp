@@ -1,7 +1,13 @@
-#include "../inc/processMap.hpp"
+#include "../inc/detectDigits.hpp"
 
-#define ROTATION_DEGREES  30
+#define DEBUG_ACTIVE
 
+/*!
+  * Rotate an image by an angle without cropping
+  * @param[in]  src      Input image to rotate
+  * @param[in]  angle    Angle degrees
+  * @return[cv::Mat]  Rotated image
+  */
 cv::Mat rotate(const cv::Mat src, int angle){
     // get rotation matrix for rotating the image around its center in pixel coordinates
     cv::Point2f center((src.cols-1)/2.0, (src.rows-1)/2.0);
@@ -17,10 +23,16 @@ cv::Mat rotate(const cv::Mat src, int angle){
     return dst;
 }
 
+/*!
+  * Perform an augmentation of the templates with different angles
+  * @param[in]  templatesFolder                     Location of the folder which contains the basic templates
+  * @return[std::vector<std::pair<cv::Mat, int> >]  Vector of associated Template-Number
+  */
 std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFolder){
     std::vector<std::pair<cv::Mat, int> > templates;
 
     bool debug = false; // choose if enable debug or not
+    int rotation_degrees = 30;
 
     for (int i = 0; i < 6; i++)
     {
@@ -29,13 +41,15 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
         
         // cv::flip(numTemplate, numTemplate, 1);
 
-        for (int j = 0; j < 360/ROTATION_DEGREES; j++)
+        for (int j = 0; j < 360/rotation_degrees; j++)
         {
-            cv::Mat numTemplate_rotated = rotate(numTemplate, ROTATION_DEGREES*j);
+            cv::Mat numTemplate_rotated = rotate(numTemplate, rotation_degrees*j);
 
             if (debug){
+                #ifdef DEBUG_ACTIVE
                 cv::imshow("Rotated templates",numTemplate_rotated);
                 cv::waitKey(0);
+                #endif       
             }
 
             templates.emplace_back(numTemplate_rotated, i);
@@ -46,7 +60,14 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
     return templates;
 }
 
-void detectDigits(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int> > templates){
+/*!
+  * Match templates to recognize digit inside the green circles of the image
+  * @param[in]  Rect        bounding box for a green blob 
+  * @param[in]  img         Original image
+  * @param[in]  greenObjs   Green objects extracted from the hsv original image 
+  * @param[in]  templates   Vector of associated Template-Number  
+  */
+void detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int> > templates){
 
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size((2 * 2) + 1, (2 * 2) + 1)); // create kernel
     cv::dilate(greenObjs, greenObjs, element);
@@ -58,24 +79,27 @@ void detectDigits(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std
     cv::Mat greenObjsInv, filtered(img.rows, img.cols, CV_8UC3, cv::Scalar(255, 255, 255));
     cv::bitwise_not(greenObjs, greenObjsInv);
 
-    //cv::imshow("inv",greenObjsInv);
-    //cv::waitKey(0);
+    #ifdef DEBUG_ACTIVE
+    cv::imshow("Inverted Image",greenObjsInv);
+    cv::waitKey(0);
+    #endif
 
     img.copyTo(filtered, greenObjsInv);
 
     cv::Mat processROI(filtered, Rect); // extract ROI
 
     if (processROI.empty()) {
+        std::cout<<"[ERROR] Empty ROI"<<std::endl;
         return;
     }
     
     cv::resize(processROI, processROI, cv::Size(200, 200)); // resize the ROI
-    cv::threshold( processROI, processROI, 100, 255, 0 ); // threshold and binarize the image, to suppress some noise
+    cv::threshold(processROI, processROI, 100, 255, 0 ); // threshold and binarize the image, to suppress some noise
 
+    #ifdef DEBUG_ACTIVE
     cv::imshow("Process ROI",processROI);
     cv::waitKey(0);
-
-
+    #endif
 
     double maxScore = 0;
     int num = -1;
@@ -99,10 +123,26 @@ void detectDigits(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std
 
     std::string title = "Best fitting template: "+std::to_string(num);
 
-    cv::imshow(title,temp);
+    cv::imshow("Best fitting template",temp);
     cv::waitKey(0);
-    
 
+}
+
+void detectDigits(cv::Mat image, cv::Mat greenObjs){
+    std::vector<std::pair<cv::Mat, int> > templates = augmentTemplates("template");
+
+    std::vector<Polygon> contours;
+    Polygon approx_curve;
+
+    cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    for (int i = 0; i < contours.size(); ++i) {
+        approxPolyDP(contours[i], approx_curve, 3, true);
+
+        if (approx_curve.size() > 10) {
+            detectSingleDigit(boundingRect(cv::Mat(approx_curve)),image,greenObjs,templates);
+        }
+    }
 }
 
 int main(int argc, char* argv[]){
@@ -121,6 +161,11 @@ int main(int argc, char* argv[]){
 
     std::vector<std::pair<cv::Mat, int> > templates = augmentTemplates("template");
 
+    #ifdef DEBUG_ACTIVE
+    cv::imshow("Original image", image);
+    cv::waitKey();
+    #endif
+
     //convert hsv
     cv::Mat imgHSV;
     cv::cvtColor(image, imgHSV, cv::COLOR_BGR2HSV);
@@ -133,8 +178,13 @@ int main(int argc, char* argv[]){
     cv::Mat greenObjs;
     cv::inRange(imgHSV, greenHSV_L, greenHSV_H, greenObjs); // extract green objects
 
-    std::vector<std::vector<cv::Point>> contours, contours_approx;
-    std::vector<cv::Point> approx_curve;
+    #ifdef DEBUG_ACTIVE
+    cv::imshow("Green mask", greenObjs);
+    cv::waitKey();
+    #endif
+
+    std::vector<Polygon> contours;
+    Polygon approx_curve;
 
     cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
@@ -142,7 +192,7 @@ int main(int argc, char* argv[]){
         approxPolyDP(contours[i], approx_curve, 3, true);
 
         if (approx_curve.size() > 10) {
-            detectDigits(boundingRect(cv::Mat(approx_curve)),image,greenObjs,templates);
+            detectSingleDigit(boundingRect(cv::Mat(approx_curve)),image,greenObjs,templates);
         }
     }
 
