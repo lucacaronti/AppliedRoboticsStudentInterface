@@ -289,7 +289,7 @@ Match templates to recognize digit inside the green circles of the image
 
 ##### Operations done
 1. filter the green mask
-<img src="./doc/images/detect_digits_0.png" width="250"
+<img src="./doc/images/detect_digits_0.png" width="250">
 
 2. `findContours` function is called
 3. `bitwise_not` is called to generate binary mask with inverted pixels
