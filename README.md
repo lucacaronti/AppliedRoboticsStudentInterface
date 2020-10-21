@@ -191,12 +191,15 @@ Process the image to detect the robot pose
 
 ##### Operations done
 Start image:
+
 <img src="./doc/images/find_robot_1.png" width="250">
 
 1. Image is converted from BGR to HSV color space
 <img src="./doc/images/find_robot_2.png" width="250">
+
 2. Blue mask is applied
 <img src="./doc/images/find_robot_3.png" width="250">
+
 3. `findContours` function is called to find blue object contours
 4. `approxPolyDB` function is called to approximate contours
 5. If there is only one object with 3 sides (triangle) so funtion can continue, othrewise the function return `false`. One future implementation can be that also if there are more than one blue object, the biggest one will be selected (if it's a triangle).
@@ -254,6 +257,49 @@ This function allows to select with mouse pointer N pints inside the image
 * `image [in]` image in which select points
 * `allPoints [out]` vector of points 2D selected
 * `num_points_to_take [in]` number of points to slect
+
+---
+
+#### `private void `[`detectDigits`]()`(cv::Mat image, cv::Mat greenObjs)`
+
+Find the countours of single green object to be detected as digit
+
+##### Parameters
+* `image` original image
+* `greenObjs [in]` green objects extracted from the hsv original image
+
+##### Operations done
+1. augment the templates using `augmentTemplates` function
+2. `findContours` function is called to find green object contours
+3. `approxPolyDB` function is called for every contour found, to approximate contours
+4. `detectSingleDigit` is called to match the contour with the templates
+
+---
+
+#### `private void `[`detectSingleDigit`]()`(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int>> templates)`
+
+
+Match templates to recognize digit inside the green circles of the image
+
+##### Parameters
+* `Rect` bounding box for a green blob
+* `img` original image
+* `greenObjs` green objects extracted from the hsv original image
+* `templates` vector of associated Template-Number
+
+##### Operations done
+1. filter the green mask
+<img src="./doc/images/detect_digits_0.png" width="250"
+
+2. `findContours` function is called
+3. `bitwise_not` is called to generate binary mask with inverted pixels
+<img src="./doc/images/detect_digits_1.png" width="250">
+
+4. `processROI` is called to extract the ROI containing the digit
+<img src="./doc/images/detect_digits_2.png" width="750">
+
+5. scan all the templates and compare them with the ROI. A score is assigned and the higher one is saved.
+<img src="./doc/images/detect_digits_3.png" width="750">
 
 ---
 
