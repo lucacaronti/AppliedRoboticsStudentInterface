@@ -1,7 +1,9 @@
 #include "findRobot.hpp"
 #include <math.h>
+#include "utils.hpp"
 
 // #define DEBUG_ACTIVE
+// #define MAIN_ACTIVE // remember to change also the CmakeList.txt
 
 /*!
   * Find the distance between two points
@@ -9,7 +11,7 @@
   * @param[in]  P2      second point
   * @return[double]  the distance between points
   */
-double findDistance(const cv::Point& P1, const cv::Point& P2){
+double findDistance(const Point& P1, const Point& P2){
     return sqrt( pow(P1.x - P2.x, 2) + pow(P1.y - P2.y, 2));
 }
 
@@ -18,9 +20,9 @@ double findDistance(const cv::Point& P1, const cv::Point& P2){
   * @param[in]  PI      first point
   * @param[in]  P2      second point
   * @param[in]  P3      third point
-  * @return[cv::Point]  the vertex point
+  * @return[Point]  the vertex point
   */
-cv::Point findVertex(const cv::Point& P1, const cv::Point& P2, const cv::Point& P3){
+Point findVertex(const Point& P1, const Point& P2, const Point& P3){
     double side_length[3];
     /* find distance between points */
     side_length[0] = findDistance(P1,P2);
@@ -62,14 +64,14 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     /* find countorus */
-    std::vector<Polygon> blue_polygons;
-    cv::findContours(blue_mask, blue_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+    std::vector<std::vector<cv::Point> > blue_contours;
+    cv::findContours(blue_mask, blue_contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
     
-    std::vector<Polygon>::iterator itvp; // create iterator
+    std::vector<std::vector<cv::Point> >::iterator itvp; // create iterator
     int polygons_counter;
 
     /* approximate contours */
-    for(itvp = blue_polygons.begin(); itvp != blue_polygons.end(); itvp ++){
+    for(itvp = blue_contours.begin(); itvp != blue_contours.end(); itvp ++){
         cv::approxPolyDP(*itvp, *itvp, 5, true);
         polygons_counter++;
     }
@@ -83,10 +85,10 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     }
 
     int corner_counter = 0;
-    Polygon::iterator itp;
+    std::vector<cv::Point>::iterator itp;
 
     /* count the number of polygon's corners */
-    for(itp = blue_polygons[0].begin(); itp != blue_polygons[0].end(); itp ++){
+    for(itp = blue_contours[0].begin(); itp != blue_contours[0].end(); itp ++){
         corner_counter++;
     }
 
@@ -98,9 +100,9 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
 
     /* save the polygon data into triangle variable (scaling them) */
     for(int i = 0 ; i < 3 ; i++){
-        triangle.emplace_back(blue_polygons[0][i].x/scale, blue_polygons[0][i].y/scale);
+        triangle.emplace_back(blue_contours[0][i].x/scale, blue_contours[0][i].y/scale);
     }
-    cv::Point P1,P2,P3;
+    Point P1,P2,P3;
     P1 = triangle[0];
     P2 = triangle[1];
     P3 = triangle[2];
@@ -119,7 +121,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     /* find vertex of triangle */
-    cv::Point vertex = findVertex(P1,P2,P3);
+    Point vertex = findVertex(P1,P2,P3);
 
     #ifdef DEBUG_ACTIVE
     std::cout<<"Vertex: "<<vertex.x<<" "<<vertex.y<<std::endl;
@@ -147,6 +149,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     return true;
 }
 
+#ifdef MAIN_ACTIVE
 int main(int argc, char* argv[]){
     if(argc != 2){
         std::cout<<"[ERROR] Argument error, usage: ./findRobot image_name.jpg"<<std::endl;
@@ -161,7 +164,7 @@ int main(int argc, char* argv[]){
         return -1;
     }
 
-    // std::vector<cv::Point3f> object_points;
+    // std::vector<Point3f> object_points;
     // cv::Mat camera_matrix, rvec, tvec;
 
     // student_extrinsicCalib(image, object_points, camera_matrix, rvec, tvec, "/tmp");
@@ -173,3 +176,4 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
+#endif

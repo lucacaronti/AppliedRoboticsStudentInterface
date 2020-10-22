@@ -1,17 +1,23 @@
-#include "../inc/processMap.hpp"
+#include "processMap.hpp"
+#include "utils.hpp"
+#include "detectDigits.hpp"
+
+// #define BLUE_GATE
+// #define DEBUG_ACTIVE
+// #define MAIN_ACTIVE // remember to change also the CmakeList.txt
 
 /*!
     * \brief Print the statistics of the polygons shapes
     * \param[in]    _Polygons   The vector with Polygons inside
     * \param[in]    _name       The name of Polygons to print
 */
-void printPolygonsShapeStat(const std::vector<Polygon>& _Polygons, const std::string& _name){
-    std::vector<Polygon>::const_iterator itvp; // create an iterator
+void printPolygonsShapeStat(const std::vector<std::vector<cv::Point> >& _Polygons, const std::string& _name){
+    std::vector<std::vector<cv::Point> >::const_iterator itvp; // create an iterator
     int counter_polygons = 0; // polygon counter
     std::cout<<"-- "<< _name<<std::endl;
     for(itvp = _Polygons.begin(); itvp != _Polygons.end(); itvp++){
         int counter_polygons_shape = 0; // polygon shape counter
-        Polygon::const_iterator itp; // create an iterator
+        std::vector<cv::Point>::const_iterator itp; // create an iterator
         for(itp = itvp->begin(); itp != itvp->end(); itp++) counter_polygons_shape++; // count the number of shapes
         std::cout<<"  |--Polygon number "<<counter_polygons<<" has "<< counter_polygons_shape<< " shapes"<<std::endl; // print the stats
         counter_polygons++; // increase the counter
@@ -21,15 +27,16 @@ void printPolygonsShapeStat(const std::vector<Polygon>& _Polygons, const std::st
 bool student_processMap::processMap(const cv::Mat& img_in, const double scale, std::vector<Polygon>& obstacle_list, std::vector<std::pair<int,Polygon> >& victim_list, Polygon& gate, const std::string& config_folder){
     cv::Mat imgHSV; // create image HSV
     cv::cvtColor(img_in, imgHSV, cv::COLOR_BGR2HSV); // convert BGR into HSV colorspace
-    bool debug = false; // choose if enable debug or not
 
     // low and high green thresold values
     cv::Scalar greenHSV_L(52,40,40);
     cv::Scalar greenHSV_H(72,255,255);
 
-    // low and high blue thresold values
-    cv::Scalar blueHSV_L(105,40,40);
-    cv::Scalar blueHSV_H(125,255,255);
+    #ifdef BLUE_GATE
+        // low and high blue thresold values
+        cv::Scalar blueHSV_L(105,40,40);
+        cv::Scalar blueHSV_H(125,255,255);
+    #endif
 
     // low and high red thresold values
     cv::Scalar redHSV_L_1(170,40,40);
@@ -38,11 +45,16 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     cv::Scalar redHSV_H_2(10,255,255);
 
     cv::Mat greenObjs;
-    cv::Mat blueObjs;
+    #ifdef BLUE_GATE
+        cv::Mat blueObjs;
+    #endif
     cv::Mat redObjs;
 
     cv::inRange(imgHSV, greenHSV_L, greenHSV_H, greenObjs); // extract green objects
-    cv::inRange(imgHSV, blueHSV_L, blueHSV_H, blueObjs); // extract blue objects
+
+    #ifdef BLUE_GATE
+        cv::inRange(imgHSV, blueHSV_L, blueHSV_H, blueObjs); // extract blue objects
+    #endif
 
     // create 2 temporary Matrices 
     cv::Mat* redObjs_1 = new cv::Mat;
@@ -54,88 +66,201 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     delete redObjs_1, redObjs_2; // delete the 2 temporary Matrices 
 
     // display iamges if degub is enable
-    if(debug){
+    #ifdef DEBUG_ACTIVE 
         cv::imshow("Green Ojbs", greenObjs);
-        cv::imshow("Blue Ojbs", blueObjs);
+        #ifdef BLUE_GATE
+            cv::imshow("Blue Ojbs", blueObjs);
+        #endif
         cv::imshow("Red Ojbs", redObjs);
         cv::waitKey();
-        cv::destroyAllWindows();
+    #endif
+
+    std::vector<std::pair<cv::Mat, int> > templates = augmentTemplates("template");
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Point> approx_curve;
+
+    cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    for (int i = 0; i < contours.size(); ++i) {
+        cv::approxPolyDP(contours[i], approx_curve, 3, true);
+
+        if (approx_curve.size() > 7) {
+            int ret = detectSingleDigit(boundingRect(cv::Mat(approx_curve)),img_in ,greenObjs,templates);
+            if(ret != -1){
+                Polygon tmp_victim;
+                std::vector<cv::Point>::iterator itvp;
+                for(itvp = approx_curve.begin(); itvp != approx_curve.end(); itvp++){
+                    tmp_victim.emplace_back(itvp->x/scale, itvp->y/scale);
+                }
+                victim_list.emplace_back(ret, tmp_victim);
+                #ifdef DEBUG_ACTIVE
+                    std::cout<<"Found victim number: "<<ret<<std::endl;
+                #endif
+            }
+
+        }
     }
 
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7,7)); // create kernel
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3,3)); // create kernel
     // make erosion
-    cv::erode(greenObjs, greenObjs, element);
-    cv::erode(blueObjs, blueObjs, element);
+    #ifdef BLUE_GATE
+        cv::erode(blueObjs, blueObjs, element);
+    #else
+        cv::erode(greenObjs, greenObjs, element);
+    #endif
     cv::erode(redObjs, redObjs, element);
     
     // display iamges if degub is enable
-    if(debug){
-        cv::imshow("Green Ojbs after erosion", greenObjs);
-        cv::imshow("Blue Ojbs after erosion", blueObjs);
+    #ifdef DEBUG_ACTIVE
+        #ifdef BLUE_GATE
+            cv::imshow("Blue Ojbs after erosion", blueObjs);
+        #else
+            cv::imshow("Green Ojbs after erosion", greenObjs);
+        #endif
         cv::imshow("Red Ojbs after erosion", redObjs);
         cv::waitKey();
-        cv::destroyAllWindows();
-    }
+    #endif
 
     // make dilatation
-    cv::dilate(greenObjs, greenObjs, element);
-    cv::dilate(blueObjs, blueObjs, element);
+    #ifdef BLUE_GATE
+        cv::dilate(blueObjs, blueObjs, element);
+    #else
+        cv::dilate(greenObjs, greenObjs, element);
+    #endif
     cv::dilate(redObjs, redObjs, element);
 
     // display iamges if degub is enable
-    if(debug){
-        cv::imshow("Green Ojbs after dilate", greenObjs);
-        cv::imshow("Blue Ojbs after dilate", blueObjs);
+    #ifdef DEBUG_ACTIVE
+        #ifdef BLUE_GATE
+            cv::imshow("Blue Ojbs after dilate", blueObjs);
+        #else
+            cv::imshow("Green Ojbs after dilate", greenObjs);
+        #endif
         cv::imshow("Red Ojbs after dilate", redObjs);
         cv::waitKey();
-        cv::destroyAllWindows();
-    }
+    #endif
 
     // create vectors of polygons
-    // **NOTE** : change typedef into utils.hpp with "typedef std::vector<cv::Point> Polygon;"
-    std::vector<Polygon> green_polygons; 
-    std::vector<Polygon> blue_polygons;
-    std::vector<Polygon> red_polygons;
+    #ifdef BLUE_GATE
+        std::vector<std::vector<cv::Point> > blue_polygons;
+    #else
+        std::vector<std::vector<cv::Point> > green_polygons; 
+    #endif
+    std::vector<std::vector<cv::Point> > red_polygons;
 
     // find contours for each color
-    cv::findContours(greenObjs, green_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-    cv::findContours(blueObjs, blue_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+    #ifdef BLUE_GATE
+        cv::findContours(blueObjs, blue_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+    #else
+        cv::findContours(greenObjs, green_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+    #endif
     cv::findContours(redObjs, red_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
     // print polygons shape statistics if debug is enable
-    if(debug){
-        printPolygonsShapeStat(green_polygons, std::string("Green"));
+    #ifdef DEBUG_ACTIVE
+        #ifdef BLUE_GATE
         printPolygonsShapeStat(blue_polygons, std::string("Blue"));
+        #else
+        printPolygonsShapeStat(green_polygons, std::string("Green"));
+        #endif
         printPolygonsShapeStat(red_polygons, std::string("Red"));
-    }
+    #endif
 
-    std::vector<Polygon>::iterator itvp; // create iterator
+    std::vector<std::vector<cv::Point> >::iterator itvvp; // create iterator
     // make the approximation on the contours
-    for(itvp = green_polygons.begin(); itvp != green_polygons.end(); itvp ++)cv::approxPolyDP(*itvp, *itvp, 5, true);
-    for(itvp = blue_polygons.begin(); itvp != blue_polygons.end(); itvp ++)cv::approxPolyDP(*itvp, *itvp, 5, true);
-    for(itvp = red_polygons.begin(); itvp != red_polygons.end(); itvp ++)cv::approxPolyDP(*itvp, *itvp, 5, true);
+    #ifdef BLUE_GATE
+        for(itvvp = blue_polygons.begin(); itvvp != blue_polygons.end(); itvvp ++)
+            cv::approxPolyDP(*itvvp, *itvvp, 5, true);
+    #else
+        for(itvvp = green_polygons.begin(); itvvp != green_polygons.end(); itvvp ++)
+            cv::approxPolyDP(*itvvp, *itvvp, 5, true);
+    #endif
+    for(itvvp = red_polygons.begin(); itvvp != red_polygons.end(); itvvp ++)
+        cv::approxPolyDP(*itvvp, *itvvp, 5, true);
+
+    #ifdef BLUE_GATE
+        std::vector<std::vector<cv::Point>> blue_squares;
+    #else
+        std::vector<std::vector<cv::Point>> green_squares;
+    #endif
+    
+    #ifdef BLUE_GATE
+        for(itvvp = blue_polygons.begin(); itvvp != blue_polygons.end(); itvvp ++){
+            if(itvvp->size() == 4){
+                blue_squares.emplace_back(*itvvp);
+            }
+        }
+        if(blue_squares.size() != 1){
+            std::cerr<<"[ERROR] Found more than one gate"<<std::endl;
+            return false;
+        }
+        #ifdef DEBUG_ACTIVE
+            std::cout<<"Blue GATE found"<<std::endl;
+        #endif
+    #else
+        for(itvvp = green_polygons.begin(); itvvp != green_polygons.end(); itvvp ++){
+            if(itvvp->size() == 4){
+                green_squares.emplace_back(*itvvp);
+            }
+        }
+        if(green_squares.size() != 1){
+            std::cerr<<"[ERROR] Found more than one gate"<<std::endl;
+            return false;
+        }
+        #ifdef DEBUG_ACTIVE
+            std::cout<<"Green GATE found"<<std::endl;
+        #endif
+    #endif
 
     // print polygons shape statistics if debug is enable
-    if(debug){
-        printPolygonsShapeStat(green_polygons, std::string("Green after approximation"));
-        printPolygonsShapeStat(blue_polygons, std::string("Blue after approximation"));
+    #ifdef DEBUG_ACTIVE
+        #ifdef BLUE_GATE
+            printPolygonsShapeStat(blue_squares, std::string("Blue after approximation"));
+        #else
+            printPolygonsShapeStat(green_polygons, std::string("Green after approximation"));
+        #endif
         printPolygonsShapeStat(red_polygons, std::string("Red after approximation"));
-    }
+    #endif
 
     // draw contours
-    cv::drawContours(img_in, green_polygons, -1, cv::Scalar(0,0,0), 1, cv::LINE_AA);
-    cv::drawContours(img_in, blue_polygons, -1, cv::Scalar(0,0,0), 1, cv::LINE_AA);
+    #ifdef BLUE_GATE
+        cv::drawContours(img_in, blue_squares, -1, cv::Scalar(0,0,0), 1, cv::LINE_AA);
+    #else
+        cv::drawContours(img_in, green_squares, -1, cv::Scalar(0,0,0), 1, cv::LINE_AA);
+    #endif
     cv::drawContours(img_in, red_polygons, -1, cv::Scalar(0,0,0), 1, cv::LINE_AA);
 
-    // display che image
-    cv::imshow("Image Contours", img_in);
+    #ifdef DEBUG_ACTIVE
+        // display che image
+        cv::imshow("Image Contours", img_in);
+        cv::waitKey();
+    #endif
 
-    cv::waitKey();
+    for(itvvp = red_polygons.begin(); itvvp != red_polygons.end(); itvvp ++){
+        std::vector<cv::Point>::iterator itvp;
+        Polygon tmp_polygon;
+        for(itvp = itvvp->begin(); itvp != itvvp->end(); itvp++){
+            tmp_polygon.emplace_back(itvp->x/scale, itvp->y/scale);
+        }
+        obstacle_list.emplace_back(tmp_polygon);
+    }
 
+    #ifdef BLUE_GATE
+        std::vector<cv::Point>::iterator itvp;
+        for(itvp = blue_squares[0].begin(); itvp != blue_squares[0].end(); itvp++){
+            gate.emplace_back(itvp->x/scale, itvp->y/scale);
+        }
+    #else
+        std::vector<cv::Point>::iterator itvp;
+        for(itvp = green_squares[0].begin(); itvp != green_squares[0].end(); itvp++){
+            gate.emplace_back(itvp->x/scale, itvp->y/scale);
+        }
+    #endif
+        
     return true;
 }
 
-
+#ifdef MAIN_ACTIVE
 int main(int argc, char* argv[]){
     if(argc != 2){
         std::cout<<"[ERROR] Argument error, usage: ./processMap image_name.jpg"<<std::endl;
@@ -157,3 +282,4 @@ int main(int argc, char* argv[]){
 
     return 0;
 }
+#endif

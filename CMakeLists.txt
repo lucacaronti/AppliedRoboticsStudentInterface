@@ -20,6 +20,7 @@ add_library(student SHARED
    src/student_interface.cpp
    src/extrinsicCalib.cpp
    src/findRobot.cpp
+   src/processMap.cpp
 )
 
 target_link_libraries(student
@@ -75,18 +76,34 @@ target_link_libraries(demo_simple_shape_detection
 include_directories(
   inc
 )
-add_executable(processMap
-  src/processMap.cpp
-)
-target_link_libraries(processMap
-  ${OpenCV_LIBRARIES}
-)
-add_executable(findRobot
-  src/findRobot.cpp
-)
-target_link_libraries(findRobot
-  ${OpenCV_LIBRARIES}
-)
+
+### Compile directly (with own main) processMap ###
+# add_executable(processMap
+#   src/processMap.cpp
+#   src/detectDigits.cpp
+# )
+# target_link_libraries(processMap
+#   ${OpenCV_LIBRARIES}
+# )
+
+
+### Compile directly (with own main) findRobot ###
+# add_executable(findRobot
+#   src/findRobot.cpp
+# )
+# target_link_libraries(findRobot
+#   ${OpenCV_LIBRARIES}
+# )
+
+### Compile directly (with own main) detectDigit ###
+# add_executable(detectDigits
+#   src/detectDigits.cpp
+# )
+# target_link_libraries(detectDigits
+#   ${OpenCV_LIBRARIES}
+# )
+
+### Compile directly (with own main) extrinsicCalib ###
 #add_executable(extrinsicCalib
 #  src/extrinsicCalib.cpp
 #)
@@ -94,9 +111,4 @@ target_link_libraries(findRobot
 #  ${OpenCV_LIBRARIES}
 #  stdc++fs
 #)
-add_executable(detectDigits
-  src/detectDigits.cpp
-)
-target_link_libraries(detectDigits
-  ${OpenCV_LIBRARIES}
-)
+

@@ -7,5 +7,7 @@
 #include <iostream>
 
 void detectDigits(cv::Mat image, cv::Mat greenObjs);
+int detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int> > templates);
+std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFolder);
 
 #endif

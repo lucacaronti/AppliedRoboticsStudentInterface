@@ -3,7 +3,6 @@
 #define DEBUG_ACTIVE
 
 
-
 struct mouseCallbackUserData_t{
     std::vector<cv::Point2f> *points;
     const cv::Mat *image;

@@ -1,6 +1,8 @@
 #include "../inc/detectDigits.hpp"
+#include "utils.hpp"
 
-#define DEBUG_ACTIVE
+// #define DEBUG_ACTIVE
+// #define MAIN_ACTIVE // remember to change also the CmakeList.txt
 
 /*!
   * Rotate an image by an angle without cropping
@@ -67,13 +69,13 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
   * @param[in]  greenObjs   Green objects extracted from the hsv original image 
   * @param[in]  templates   Vector of associated Template-Number  
   */
-void detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int> > templates){
+int detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int> > templates){
 
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size((2 * 2) + 1, (2 * 2) + 1)); // create kernel
     cv::dilate(greenObjs, greenObjs, element);
     cv::erode(greenObjs, greenObjs, element);
 
-    std::vector<Polygon> green_polygons;
+    std::vector<std::vector<cv::Point> > green_polygons;
     cv::findContours(greenObjs, green_polygons, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
     cv::Mat greenObjsInv, filtered(img.rows, img.cols, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -90,7 +92,7 @@ void detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vecto
 
     if (processROI.empty()) {
         std::cout<<"[ERROR] Empty ROI"<<std::endl;
-        return;
+        return -1;
     }
     
     cv::resize(processROI, processROI, cv::Size(200, 200)); // resize the ROI
@@ -123,21 +125,25 @@ void detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vecto
 
     std::string title = "Best fitting template: "+std::to_string(num);
 
+    #ifdef DEBUG_ACTIVE
     cv::imshow("Best fitting template",temp);
     cv::waitKey(0);
+    #endif
+
+    return num;
 
 }
 
 void detectDigits(cv::Mat image, cv::Mat greenObjs){
     std::vector<std::pair<cv::Mat, int> > templates = augmentTemplates("template");
 
-    std::vector<Polygon> contours;
-    Polygon approx_curve;
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Point> approx_curve;
 
     cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     for (int i = 0; i < contours.size(); ++i) {
-        approxPolyDP(contours[i], approx_curve, 3, true);
+        cv::approxPolyDP(contours[i], approx_curve, 3, true);
 
         if (approx_curve.size() > 10) {
             detectSingleDigit(boundingRect(cv::Mat(approx_curve)),image,greenObjs,templates);
@@ -145,6 +151,7 @@ void detectDigits(cv::Mat image, cv::Mat greenObjs){
     }
 }
 
+#ifdef MAIN_ACTIVE
 int main(int argc, char* argv[]){
     if(argc != 2){
         std::cout<<"[ERROR] Argument error, usage: ./detectDigits image_name.jpg"<<std::endl;
@@ -183,18 +190,19 @@ int main(int argc, char* argv[]){
     cv::waitKey();
     #endif
 
-    std::vector<Polygon> contours;
-    Polygon approx_curve;
+    std::vector<std::vector<cv::Point> > contours;
+    std::vector<cv::Point> approx_curve;
 
     cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     for (int i = 0; i < contours.size(); ++i) {
-        approxPolyDP(contours[i], approx_curve, 3, true);
+        cv::approxPolyDP(contours[i], approx_curve, 3, true);
 
-        if (approx_curve.size() > 10) {
+        if (approx_curve.size() > 7) {
             detectSingleDigit(boundingRect(cv::Mat(approx_curve)),image,greenObjs,templates);
         }
     }
 
     
 }
+#endif
