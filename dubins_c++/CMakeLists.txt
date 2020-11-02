@@ -11,6 +11,7 @@ add_library(dubins_libraries STATIC
    dubins.cpp
    primitives.cpp
    inc/plot.h
+   inc/CvPlot/cvplot.h
 )
 
 target_include_directories(dubins_libraries PUBLIC inc)

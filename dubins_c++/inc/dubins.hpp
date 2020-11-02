@@ -8,10 +8,15 @@
 #include <assert.h>
 #include "primitives.hpp"
 
-#include <opencv2/highgui.hpp>
+
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+
+// library for plots
+#define CVPLOT_HEADER_ONLY
+#include <CvPlot/cvplot.h>
+
 
 using namespace std;
 using namespace cv;
@@ -53,6 +58,8 @@ tuple<double, double, double> scaleFromStandard(double lambda, double sc_s1, dou
 pair<int, curve> shortest_path(double x0, double y0, double th0, double xf, double yf, double thf, double kmax);
 
 tuple<double, double, double> circline(double s, double x0, double y0, double th0, double k);
+
+tuple<vector<float>, vector<float>> plotarc(arc arc);
 
 void plotdubins(curve curve);
 

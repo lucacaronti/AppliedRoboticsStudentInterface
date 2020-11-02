@@ -202,10 +202,10 @@ tuple<double, double, double> circline(double s, double x0, double y0, double th
 }
 
 // Plot an arc (circular or straight) composing a Dubins curve
-void plotarc(arc arc){
+tuple<vector<float>, vector<float>> plotarc(arc arc){
     int npts = 100;
-    Mat data_x(1, npts+1, CV_64F);
-    Mat data_y(1, npts+1, CV_64F);
+    vector<float> data_x;
+    vector<float> data_y;
 
     double s;
     double x;
@@ -215,35 +215,37 @@ void plotarc(arc arc){
     for(int j=0; j<npts; j++){
         s = arc.L/npts*j;
         tie(x, y, th) = circline(s, arc.x0, arc.y0, arc.th0, arc.k);
-        data_x.at<double>(0, j+1) = x;
-        data_y.at<double>(0, j+1) = y;
+        if(x!=0){
+            data_x.push_back(x);
+            data_y.push_back(y); 
+        }  
     }
-
-    Mat plot_result;
-
-    Ptr<plot::Plot2d> plot = plot::Plot2d::create(data_y);
-
-    plot->setShowText( false );
-    plot->setShowGrid( false );
-    plot->setPlotBackgroundColor( Scalar( 255, 255, 255 ) );
-    plot->setPlotLineColor( Scalar( 255, 0, 0 ) );
-    plot->setPlotLineWidth( 2 );
-    plot->render(plot_result);
-
-    imshow( "The plot rendered with default visualization options", plot_result );
-
-    waitKey();
-    return;
+    
+    return make_tuple(data_x, data_y);
 
 }
 
 // Plot a Dubins curve
 void plotdubins(curve curve){
+    vector<float> data_x;
+    vector<float> data_y;
+
+    auto axes = CvPlot::makePlotAxes();
 
     // Plot arcs
-    plotarc(curve.a1);
-    plotarc(curve.a2);
-    plotarc(curve.a3);
+    tie(data_x, data_y) = plotarc(curve.a1);
+    axes.create<CvPlot::Series>(data_x, data_y, "-g"); 
+
+    tie(data_x, data_y) = plotarc(curve.a2);
+    axes.create<CvPlot::Series>(data_x, data_y, "-b"); 
+
+    tie(data_x, data_y) = plotarc(curve.a3);
+    axes.create<CvPlot::Series>(data_x, data_y, "-r"); 
+
+    Mat mat = axes.render(300, 400);
+    imshow("Dubins Best Path", mat);
+
+    waitKey();
 
     return;
 }
@@ -269,5 +271,7 @@ int main()
     if (pidx > 0){
         plotdubins(curve);
     }
-    
+    else{
+        cout << "Failed!" << endl;
+    }
 }
