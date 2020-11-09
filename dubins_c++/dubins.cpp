@@ -1,6 +1,8 @@
-#include "dubins.hpp"
+#include "primitives.hpp"
 #include "plot.h"
 
+#include <vector>
+#include <string>
 
 /* ------------------------------------------- */
 /*              data structures                */
@@ -153,7 +155,7 @@ pair<int, curve> dubins_shortest_path(double x0, double y0, double th0, double x
     // Try all the possible primitives, to find the optimal solution
     double L = INFINITY;
     int pidx = -1;
-    for(int i = 0; i < primitives.size(); i++){
+    for(uint i = 0; i < primitives.size(); i++){
         bool ok;
         double sc_s1_c, sc_s2_c, sc_s3_c;
 
@@ -203,7 +205,7 @@ tuple<double, double, double> circline(double s, double x0, double y0, double th
 
 // Plot an arc (circular or straight) composing a Dubins curve
 tuple<vector<float>, vector<float>> plotarc(arc arc){
-    int npts = 100;
+    int npts = 1000;
     vector<float> data_x;
     vector<float> data_y;
 
@@ -250,28 +252,127 @@ void plotdubins(curve curve){
     return;
 }
 
+// Plot a Multi Dubins curve
+void multiplotdubins(const vector<pair<int,curve> > & multi_curve){
+    vector<float> data_x;
+    vector<float> data_y;
+
+    auto axes = CvPlot::makePlotAxes();
+
+    for(int i = 0; i < multi_curve.size(); i++){
+        // Plot arcs
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a1);
+        axes.create<CvPlot::Series>(data_x, data_y, "-g"); 
+
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a2);
+        axes.create<CvPlot::Series>(data_x, data_y, "-b"); 
+
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a3);
+        axes.create<CvPlot::Series>(data_x, data_y, "-r"); 
+
+        axes.create<CvPlot::Series>(float(multi_curve[i].second.a1.x0), float(multi_curve[i].second.a1.y0), "k-o");
+        if(i == 0){
+            axes.create<CvPlot::Series>(float(multi_curve[i].second.a3.xf), float(multi_curve[i].second.a3.yf), "k-o");
+        }
+    }
+
+    Mat mat = axes.render(800, 800);
+    imshow("Dubins Best Path", mat);
+
+    waitKey();
+
+    return;
+}
+
+// Fill a vector with all theta to test. From 0 to 2*PI with a given step
+void generate_angles(vector<double> & angles, double step){
+    for(double theta = 0; theta < 2*M_PI ; theta += step){
+        angles.push_back(theta);
+    }
+}
+
+// Compute the distance of subset path. Save also the found curves
+double minD_j(double x0,double y0, double xf, double yf, double k, const vector<double>& th0s, double thf, \
+        vector<pair<int ,curve> >& multi_curve ){
+    
+    vector<double>::const_iterator itd; // Define an iterator
+
+    curve best_curve;
+    best_curve.L = INFINITY;
+    int best_curve_pidx = -1;
+
+    // Find the best curve trying with all angles
+    for(itd = th0s.begin(); itd != th0s.end(); itd++){
+        int pidx;
+        curve curve;
+        tie(pidx, curve) = dubins_shortest_path(x0, y0, *itd, xf, yf, thf, k); // Compute a single dubins problem
+        if(pidx >= 0){
+            if(curve.L < best_curve.L){
+                best_curve = curve;
+                best_curve_pidx = pidx;
+            }
+        }
+    }
+    // Save the best curve
+    multi_curve.emplace_back(pair<int, struct curve>(best_curve_pidx, best_curve));
+    return best_curve.L;
+
+}
+
+/* Compute L recursively */
+double L(int j, int n, const vector<Point2d>& middle_points, 
+        double x0, double y0, double th0, double xf, double yf, double thf, double k, const vector<double>& th0s, 
+        vector<pair<int ,curve> >& multi_curve){
+    if(n < 2){ // Check if there is at least one intermediate point
+        vector<double> firsts_th0;
+        firsts_th0.emplace_back(th0); // Set that first thet0 is known
+        return minD_j(x0, y0, xf, yf, k, firsts_th0, thf, multi_curve);
+    }else{
+        if(j == n-1){
+            // Last case (j == n-1) -> L = 0 
+            return minD_j(middle_points[j-1].x, middle_points[j-1].y, xf, yf, k, th0s, thf, multi_curve);
+        }
+        // Define temporaney L (length)
+        double tmp_L = L(j+1, n, middle_points, x0, y0, th0, xf, yf, thf, k, th0s, multi_curve);
+        // Define the last th0 found
+        double last_th0 = multi_curve[multi_curve.size() - 1].second.a1.th0;
+        if(j == 0){
+            vector<double> firsts_th0;
+            firsts_th0.emplace_back(th0); // Set that first thet0 is known
+            return minD_j(x0, y0, middle_points[j].x, middle_points[j].y, k, firsts_th0, last_th0, multi_curve) + tmp_L;
+        }else{
+            return minD_j(middle_points[j-1].x, middle_points[j-1].y, middle_points[j].x, middle_points[j].y, k, th0s, last_th0, multi_curve) + tmp_L;
+        }
+    }
+}
+
 int main()
 {
+    // Define range of angle to test
+    vector<double> theta_angles;
+    generate_angles(theta_angles, M_PI / 8);
 
-    // Define problem data
-    double x0 = 0;
-    double y0 = 0;
+    // Define intermediate points
+    vector<Point2d> points;
+    points.emplace_back(Point2d(2,3));
+    points.emplace_back(Point2d(3,5));
+    points.emplace_back(Point2d(1,15));
+    points.emplace_back(Point2d(10,11));
+
+    // Define multi curve object
+    vector<pair<int ,curve> > multi_curve;
+
+    // Define initial and final data
+    double x0 = 1;
+    double y0 = 1;
     double th0 = -M_PI/2;
     double xf = 4; 
-    double yf = 0;
+    double yf = 4;
     double thf = -M_PI/2;
     double kmax = 1.0;
 
     // Find optimal Dubins solution
-    int pidx;
-    curve curve;
-    tie(pidx, curve) = dubins_shortest_path(x0, y0, th0, xf, yf, thf, kmax);
-
-    // Plot and display solution if valid
-    if (pidx > 0){
-        plotdubins(curve);
-    }
-    else{
-        cout << "Failed!" << endl;
-    }
+    double l_value = L(0, points.size() + 1, points, x0, y0, th0, xf, yf, thf, kmax, theta_angles, multi_curve);
+    cout<<"Total L value = "<<l_value<<endl;
+    multiplotdubins(multi_curve);
 }
