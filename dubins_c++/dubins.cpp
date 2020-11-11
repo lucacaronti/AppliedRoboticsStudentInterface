@@ -259,7 +259,7 @@ void multiplotdubins(const vector<pair<int,curve> > & multi_curve){
 
     auto axes = CvPlot::makePlotAxes();
 
-    for(int i = 0; i < multi_curve.size(); i++){
+    for(long unsigned int i = 0; i < multi_curve.size(); i++){
         // Plot arcs
         tie(data_x, data_y) = plotarc(multi_curve[i].second.a1);
         axes.create<CvPlot::Series>(data_x, data_y, "-g"); 
@@ -284,11 +284,103 @@ void multiplotdubins(const vector<pair<int,curve> > & multi_curve){
     return;
 }
 
+DubinsCurve::DubinsCurve(){
+    x0 = 0;
+    xf = 0;
+    y0 = 0;
+    yf = 0;
+    th0 = 0;
+    thf = 0;
+    kmax = 0;
+}
+
+DubinsCurve::~DubinsCurve(){
+}
+
+void DubinsCurve::set_k(double _k){
+    kmax = _k;
+}
+
+void DubinsCurve::add_start_data(double _x0, double _y0, double _th0){
+    x0 = _x0;
+    y0 = _y0;
+    th0 = _th0;
+}
+void DubinsCurve::add_final_data(double _xf, double _yf, double _thf){
+    xf = _xf;
+    yf = _yf;
+    thf = _thf;
+}
+
+void normalize_0_2pi(vector<double> & angles){
+    for(auto it_double = angles.begin(); it_double != angles.end(); it_double++){
+        if(*it_double > 2*M_PI){
+            *it_double = *it_double - 2*M_PI;
+        }
+    }
+}
 // Fill a vector with all theta to test. From 0 to 2*PI with a given step
 void generate_angles(vector<double> & angles, double step){
     for(double theta = 0; theta < 2*M_PI ; theta += step){
         angles.push_back(theta);
     }
+}
+
+void generate_angles_with_range(vector<double>& angles, double theta0, double h, int k){
+    for(int i = -k/2; i <= k/2 ; i++){
+        angles.push_back(theta0 + 3*h/k * i);
+    }
+    normalize_0_2pi(angles);
+}
+
+void DubinsCurve::add_middle_points(double px, double py){
+    middle_points.emplace_back(Point2d(px,py));
+}
+bool DubinsCurve::solver(int m, int k){
+    for(int i = 0 ; i < m ; i++){
+        double l_value;
+        vector<pair<int, curve> > tmp_multi_curve; 
+        l_value = L(0, middle_points.size() + 1, middle_points, x0, y0, th0, xf, yf, thf, kmax, multi_curve,tmp_multi_curve,i, k);
+        multi_curve.clear();
+        multi_curve = tmp_multi_curve;
+        cout<<"With m = "<<i<<" -> L = "<<l_value<<endl;
+    }
+    for(auto it_mc = multi_curve.begin(); it_mc != multi_curve.end(); it_mc++){
+        if(it_mc->first < 0)
+            return false;
+    }
+    return true;
+}
+
+void DubinsCurve::plot() const{
+    vector<float> data_x;
+    vector<float> data_y;
+
+    auto axes = CvPlot::makePlotAxes();
+
+    for(long unsigned int i = 0; i < multi_curve.size(); i++){
+        // Plot arcs
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a1);
+        axes.create<CvPlot::Series>(data_x, data_y, "-g"); 
+
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a2);
+        axes.create<CvPlot::Series>(data_x, data_y, "-b"); 
+
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a3);
+        axes.create<CvPlot::Series>(data_x, data_y, "-r"); 
+
+        axes.create<CvPlot::Series>(float(multi_curve[i].second.a1.x0), float(multi_curve[i].second.a1.y0), "k-o");
+        if(i == 0){
+            axes.create<CvPlot::Series>(float(multi_curve[i].second.a3.xf), float(multi_curve[i].second.a3.yf), "k-o");
+        }
+    }
+
+    Mat mat = axes.render(800, 800);
+    imshow("Dubins Best Path", mat);
+
+    waitKey();
+
+    return;
 }
 
 // Compute the distance of subset path. Save also the found curves
@@ -311,68 +403,75 @@ double minD_j(double x0,double y0, double xf, double yf, double k, const vector<
                 best_curve = curve;
                 best_curve_pidx = pidx;
             }
+        }else{
+            cout<<"ERRORE"<<endl;
         }
     }
     // Save the best curve
     multi_curve.emplace_back(pair<int, struct curve>(best_curve_pidx, best_curve));
     return best_curve.L;
-
 }
 
-/* Compute L recursively */
 double L(int j, int n, const vector<Point2d>& middle_points, 
-        double x0, double y0, double th0, double xf, double yf, double thf, double k, const vector<double>& th0s, 
-        vector<pair<int ,curve> >& multi_curve){
+        double x0, double y0, double th0, double xf, double yf, double thf, double kmax,
+        vector<pair<int ,curve> >& multi_curve ,vector<pair<int ,curve> >& tmp_multi_curve , int m, int k){
+    
     if(n < 2){ // Check if there is at least one intermediate point
         vector<double> firsts_th0;
         firsts_th0.emplace_back(th0); // Set that first thet0 is known
-        return minD_j(x0, y0, xf, yf, k, firsts_th0, thf, multi_curve);
+        return minD_j(x0, y0, xf, yf, kmax, firsts_th0, thf, tmp_multi_curve);
     }else{
         if(j == n-1){
+            vector<double> angles;
+            if(m == 0){
+                generate_angles(angles, 2*M_PI/k);
+            }else{
+                double h = 2*M_PI*pow(3,m)/(pow(k*2,m));
+                generate_angles_with_range(angles, multi_curve[n-j-1].second.a1.th0, h, k);
+            }
             // Last case (j == n-1) -> L = 0 
-            return minD_j(middle_points[j-1].x, middle_points[j-1].y, xf, yf, k, th0s, thf, multi_curve);
+            return minD_j(middle_points[j-1].x, middle_points[j-1].y, xf, yf, kmax, angles, thf, tmp_multi_curve);
         }
-        // Define temporaney L (length)
-        double tmp_L = L(j+1, n, middle_points, x0, y0, th0, xf, yf, thf, k, th0s, multi_curve);
+        // Define temporaney l (length)
+        double tmp_L = L(j+1, n, middle_points, x0, y0, th0, xf, yf, thf, kmax, multi_curve, tmp_multi_curve, m, k);
         // Define the last th0 found
-        double last_th0 = multi_curve[multi_curve.size() - 1].second.a1.th0;
+        double last_th0 = tmp_multi_curve[n-j-2].second.a1.th0;
         if(j == 0){
             vector<double> firsts_th0;
             firsts_th0.emplace_back(th0); // Set that first thet0 is known
-            return minD_j(x0, y0, middle_points[j].x, middle_points[j].y, k, firsts_th0, last_th0, multi_curve) + tmp_L;
+            return minD_j(x0, y0, middle_points[j].x, middle_points[j].y, kmax, firsts_th0, last_th0, tmp_multi_curve) + tmp_L;
         }else{
-            return minD_j(middle_points[j-1].x, middle_points[j-1].y, middle_points[j].x, middle_points[j].y, k, th0s, last_th0, multi_curve) + tmp_L;
+            vector<double> angles;
+            if(m == 0){
+                generate_angles(angles, 2*M_PI/k);
+            }else{
+                double h = 2*M_PI*pow(3,m)/(pow(k*2,m));
+                generate_angles_with_range(angles, multi_curve[n-j-1].second.a1.th0, h, k);
+            }
+            return minD_j(middle_points[j-1].x, middle_points[j-1].y, middle_points[j].x, middle_points[j].y, kmax, angles, last_th0, tmp_multi_curve) + tmp_L;
         }
     }
 }
 
 int main()
 {
-    // Define range of angle to test
-    vector<double> theta_angles;
-    generate_angles(theta_angles, M_PI / 8);
 
-    // Define intermediate points
-    vector<Point2d> points;
-    points.emplace_back(Point2d(2,3));
-    points.emplace_back(Point2d(3,5));
-    points.emplace_back(Point2d(1,15));
-    points.emplace_back(Point2d(10,11));
+    DubinsCurve dubinsCurve;
 
-    // Define multi curve object
-    vector<pair<int ,curve> > multi_curve;
+    dubinsCurve.set_k(1);
+    dubinsCurve.add_start_data(1,1,-M_PI/2);
+    dubinsCurve.add_final_data(4,4,-M_PI/2);
+    dubinsCurve.add_middle_points(2,3);
+    dubinsCurve.add_middle_points(3,5);
+    dubinsCurve.add_middle_points(1,15);
+    dubinsCurve.add_middle_points(10,11);
+    dubinsCurve.add_middle_points(3,13);
+    dubinsCurve.add_middle_points(2,10);
+    dubinsCurve.add_middle_points(10,4);
+    dubinsCurve.add_middle_points(4,1);
 
-    // Define initial and final data
-    double x0 = 1;
-    double y0 = 1;
-    double th0 = -M_PI/2;
-    double xf = 4; 
-    double yf = 4;
-    double thf = -M_PI/2;
-    double kmax = 1.0;
-
-    // Find optimal Dubins solution
-    double l_value = L(0, points.size() + 1, points, x0, y0, th0, xf, yf, thf, kmax, theta_angles, multi_curve);
-    cout<<"Total L value = "<<l_value<<endl;
-    multiplotdubins(multi_curve);
+    bool ret = dubinsCurve.solver(4, 16);
+    if(!ret) {cout<<"[ERROR] unable to solve dubins curve"<<endl; exit(EXIT_FAILURE);}
+    
+    dubinsCurve.plot();
 }
