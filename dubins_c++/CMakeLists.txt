@@ -10,7 +10,6 @@ find_package(OpenCV REQUIRED)
 add_library(dubins_libraries STATIC
    dubins.cpp
    primitives.cpp
-   inc/plot.h
    inc/CvPlot/cvplot.h
 )
 

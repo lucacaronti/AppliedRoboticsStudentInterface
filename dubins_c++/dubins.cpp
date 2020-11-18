@@ -1,5 +1,4 @@
 #include "primitives.hpp"
-#include "plot.h"
 
 #include <vector>
 #include <string>
