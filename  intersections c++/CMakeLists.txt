@@ -9,7 +9,6 @@ find_package(OpenCV REQUIRED)
 ## Specify additional locations of header files
 add_library(intersections_libraries STATIC
    intersections.cpp
-   inc/CvPlot/cvplot.h
 )
 
 target_include_directories(intersections_libraries PUBLIC inc)

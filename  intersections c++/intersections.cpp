@@ -3,6 +3,47 @@
 
 #include "intersections.hpp"
 
+/* ============================================ */
+/*         Intersection Class methods           */
+/* ============================================ */
+Intersections::Intersections(){
+    minX = 0;
+	maxX = 0;
+	minY = 0;
+	maxY = 0;
+}
+
+Intersections::~Intersections(){
+}
+
+void Intersections::set_X(double _minX, double _maxX){
+	minX = _minX;
+	maxX = _maxX;
+	xDiff = _maxX - _minX;
+}
+
+void Intersections::set_Y(double _minY, double _maxY){
+	minY = _minY;
+	maxY = _maxY;
+	yDiff = _maxY - _minY;
+}
+
+Point2d Intersections::random_Point2d(){
+	Point2d p;
+	p.x = double(rand() / (RAND_MAX + 1.) * (maxX-minX)+minX);
+	p.y = double(rand() / (RAND_MAX + 1.) * (maxY-minY)+minY);
+	return p;
+}
+
+int Intersections::random_radius(){
+	int radius = int(rand() / (RAND_MAX + 1.)*hypot(xDiff,yDiff)/4);
+	if(radius>0){return(radius);} 
+	return(1);
+}
+
+/* -------------------------------------------- */
+/*                 Line-Line                    */
+/* -------------------------------------------- */
 double cross2D(Point2d v1, Point2d v2){
 	double cprod = v1.x * v2.y - v1.y * v2.x;
 	return cprod;
@@ -86,118 +127,177 @@ bool Intersections::intersLineLine(vector<Point2d> line_a, vector<Point2d> line_
    	for(int t=0; t<ts.size(); t++){
    		Point2d pt = Point2d(p.x+ts[t]*r.x, p.y+ts[t]*r.y);
    		pts.emplace_back(pt);
+   		drawMarker(img, resize(pt), Scalar(0,0,255),MARKER_TILTED_CROSS ,20,2,LINE_AA);
    	}
    	
    	return true;
 
 }
 
-void Intersections::plot(){
-	auto axes = CvPlot::makePlotAxes();
+/* -------------------------------------------- */
+/*                 Circle-Line                  */
+/* -------------------------------------------- */
+bool Intersections::intersCircleLine(Point2d center, int r, vector<Point2d> line){
 
-	vector<double> data_x;
-	vector<double> data_y;
+	vector<double> ts;
 
-	vector<Point2d> line;
-	vector<Point2d> pt;
+	double a = center.x;
+	double b = center.y;
 
-	for(int i=0; i<all_lines.size(); i++){
-		line = all_lines[i];
-		data_x = {};
-		data_y = {};
-		for(int p=0; p<line.size(); p++){
-			data_x.emplace_back(line[p].x);
-			data_y.emplace_back(line[p].y);
-		}
-		if(i==0){
-			axes.create<CvPlot::Series>(data_x, data_y, "-b");	
-		}
-		else{
-			axes.create<CvPlot::Series>(data_x, data_y, "-k");
-		}
-		
+	double x1 = line[0].x;
+	double y1 = line[0].y;
+
+	double x2 = line[1].x;
+	double y2 = line[1].y;
+
+	double p1 = 2*x1*x2;
+    double p2 = 2*y1*y2;
+    double p3 = 2*a*x1;
+    double p4 = 2*a*x2;
+    double p5 = 2*b*y1;
+    double p6 = 2*b*y2;
+
+    double c1 = pow(x1,2)+pow(x2,2)-p1+pow(y1,2)+pow(y2,2)-p2;
+    double c2 = -2*pow(x2,2)+p1-p3+p4-2*pow(y2,2)+p2-p5+p6;
+    double c3 = pow(x2,2)-p4+pow(a,2)+pow(y2,2)-p6+pow(b,2)-pow(r,2);
+
+    double delta = pow(c2,2)-4*c1*c3;
+    double t1, t2, x, y;
+
+    if(delta<0){
+    	return(false);
+    }
+    else{
+    	if(delta>0){
+    		double deltaSq = sqrt(delta);
+    		t1 = (-c2+deltaSq)/(2*c1);
+        	t2 = (-c2-deltaSq)/(2*c1);
+    	}
+    	else{
+    		t1 = -c2/(2*c1);
+        	t2 = t1;
+    	}
+    }
+
+    if(t1>=0 && t1<=1){
+    	x = x1*t1+x2*(1-t1);
+    	y = y1*t1+y2*(1-t1);
+    	pts.emplace_back(Point2d(x,y));
+    	ts.emplace_back(t1);
+    }
+
+    if(t2 >=0 && t2<=1 && t2!=t1){
+	    x = x1*t2+x2*(1-t2);
+	    y = y1*t2+y2*(1-t2);
+	    pts.emplace_back(Point2d(x,y));
+    	ts.emplace_back(t2);
 	}
 
-	for(int i=0; i<pts.size(); i++){
-		axes.create<CvPlot::Series>(pts[i].x, pts[i].y, "r-o");
+	Point2d pt;
+	for(int k=0; k<pts.size(); k++){
+		pt = pts[k];
+		drawMarker(img, resize(pt), Scalar(0,0,255),MARKER_TILTED_CROSS,20 ,2 ,LINE_AA);
 	}
+    return(true);
 
-	Mat mat = axes.render(800, 800);
-    imshow("Intersections", mat);
-
-    waitKey();
 }
 
 /* -------------------------------------------- */
-/*         Intersection Class methods           */
+/*               For opencv plot                */
 /* -------------------------------------------- */
-Intersections::Intersections(){
-    minX = 0;
-	maxX = 0;
-	minY = 0;
-	maxY = 0;
+
+void Intersections::set_plot(double size){
+	img_size = size;
+	img = Mat::zeros(Size(img_size, img_size), CV_8UC3);
+	img = Scalar( 255,  255,  255);
 }
 
-Intersections::~Intersections(){
+Point2d Intersections::resize(Point2d p){
+	double ratioX = img_size/xDiff;
+	double ratioY = img_size/yDiff;
+
+	Point2d p_opencv;
+	p_opencv.x = (p.x-minX)*ratioX;
+	p_opencv.y = (maxY-p.y)*ratioY;
+
+	return(p_opencv);
 }
 
-void Intersections::set_X(double _minX, double _maxX){
-	minX = _minX;
-	maxX = _maxX;
-	xDiff = _maxX - _minX;
-}
-
-void Intersections::set_Y(double _minY, double _maxY){
-	minY = _minY;
-	maxY = _maxY;
-	xDiff = _maxY - _minY;
-}
-
-Point2d Intersections::random_point(){
-	Point2d p;
-	p.x = double(rand() / (RAND_MAX + 1.) * (maxX-minX)+minX);
-	p.y = double(rand() / (RAND_MAX + 1.) * (maxY-minY)+minY);
-	return p;
-}
-
-void Intersections::add_line(vector<Point2d> line){
-	all_lines.emplace_back(line);
+int Intersections::resize_radius(int r){
+	double ratio = img_size/xDiff;
+	return(r*ratio);
 }
 
 /* -------------------------------------------- */
 /*        		       main       			    */
 /* -------------------------------------------- */
-int main()
-{
-	srand((unsigned) time(0));
-    Intersections inters;
+void Intersections::solve(int mode){
+	
+	// mode:	0 Line-Line
+	// 			1 Circle-Line
+	
 
-    inters.set_X(-10, 10);
-    inters.set_Y(-10, 10);
+	srand((unsigned) time(0));
+
+    set_plot(800);
+
+    set_X(-10, 10);
+    set_Y(-10, 10);
 
     vector<Point2d> line_a;
     vector<Point2d> line_b;
 
-    int iters = 0;
+    Point2d center;
+    int radius;
+
+    int nSegm = 10;
+    int s = 0;
+    int nIters = 1;
+
     bool res;
 
-    for(int i=0; i<1; i++){
-    	line_a = {inters.random_point(), inters.random_point()};
+    for(int i=0; i<nIters; i++){
 
-    	inters.add_line(line_a);
+    	if(mode==0){
+    		line_a = {random_Point2d(), random_Point2d()};
+    		line(img, resize(line_a[0]), resize(line_a[1]),Scalar(255,0,0), 2, LINE_AA );
+    	}
 
-    	while(iters<10){
-    		line_b = {inters.random_point(), inters.random_point()};
+    	if(mode==1){
+    		center = random_Point2d();
+	    	radius = random_radius();
+	    	circle(img, resize(center), resize_radius(radius), Scalar(255,0,0), 2, LINE_AA);
+    	}    	
 
-    		res = inters.intersLineLine(line_a, line_b);
+    	while(s<nSegm){
+    		line_b = {random_Point2d(), random_Point2d()};
 
-    		if(res){ 
-    			inters.add_line(line_b);
-    			iters+=1;
+    		if(mode==0){
+    			res = intersLineLine(line_a, line_b);
     		}
+
+    		if(mode==1){
+    			res = intersCircleLine(center, radius, line_b);
+    		}
+
+    		if(true){ 
+    			line(img, resize(line_b[0]), resize(line_b[1]), Scalar(0,0,0), 1, LINE_AA );
+    			s+=1;
+    		}
+    		
     	}
     	  
     }
 
-    inters.plot();
+    char window[] = "Intersections";
+    imshow(window, img);
+    moveWindow(window, 0, 0);
+    waitKey();
+}
+
+int main()
+{
+	Intersections inters;
+	inters.solve(1);
+	return(0);
 }
