@@ -5,6 +5,10 @@ project(sampling)
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
 
+# Only if there is an error:
+add_compile_options(-I/usr/include/opencv4/)
+add_compile_options(-I/home/luca/Documents/git/AppliedRoboticsStudentInterface/dubins_c++/inc/)
+
 find_package(OpenCV REQUIRED)
 
 
@@ -13,6 +17,7 @@ add_library(sampling_libraries STATIC
 	src/sampling.cpp
 	src/hammersley.cpp
 	src/halton.cpp
+	src/dijkstra.cpp
 	# inc/CvPlot/cvplot.h
 	../../dubins_c++/inc/CvPlot/cvplot.h
 )
@@ -24,6 +29,6 @@ add_executable(sampling
 )
 
 target_link_libraries(sampling
-	sampling_libraries
 	${OpenCV_LIBRARIES}
+	sampling_libraries
 )
