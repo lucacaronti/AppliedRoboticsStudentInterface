@@ -15,7 +15,7 @@ public:
 
     bool addEdge(cv::Point2d start, cv::Point2d end, double weight);
 
-    void shortesPath(cv::Point2d start, cv::Point2d end, std::vector<cv::Point2d>& best_path);
+    bool shortesPath(cv::Point2d start, cv::Point2d end, std::vector<cv::Point2d>& best_path);
 
     void print() const;
 };

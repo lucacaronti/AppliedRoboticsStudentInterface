@@ -1,6 +1,6 @@
 # cmake_minimum_required(VERSION 2.8.3)
 cmake_minimum_required(VERSION 3.5.1)
-project(sampling)
+project(sbmp)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -13,7 +13,8 @@ find_package(OpenCV REQUIRED)
 
 
 ## Specify additional locations of header files
-add_library(sampling_libraries STATIC
+add_library(sbmp_libraries STATIC
+	src/sbmp.cpp	
 	src/sampling.cpp
 	src/hammersley.cpp
 	src/halton.cpp
@@ -22,13 +23,13 @@ add_library(sampling_libraries STATIC
 	../../dubins_c++/inc/CvPlot/cvplot.h
 )
 
-target_include_directories(sampling_libraries PUBLIC inc)
+target_include_directories(sbmp_libraries PUBLIC inc)
 
-add_executable(sampling 
-	src/sampling.cpp
+add_executable(sbmp 
+	src/sbmp.cpp
 )
 
-target_link_libraries(sampling
+target_link_libraries(sbmp
 	${OpenCV_LIBRARIES}
-	sampling_libraries
+	sbmp_libraries
 )
