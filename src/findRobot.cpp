@@ -68,7 +68,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     cv::findContours(blue_mask, blue_contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
     
     std::vector<std::vector<cv::Point> >::iterator itvp; // create iterator
-    int polygons_counter;
+    int polygons_counter = 0;
 
     /* approximate contours */
     for(itvp = blue_contours.begin(); itvp != blue_contours.end(); itvp ++){
@@ -140,7 +140,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     #ifdef DEBUG_ACTIVE
-    cv::drawContours(img_in, blue_polygons, -1, cv::Scalar(0,0,0), 3, cv::LINE_AA);
+    cv::drawContours(img_in, blue_contours, -1, cv::Scalar(0,0,0), 3, cv::LINE_AA);
     // display che image
     cv::imshow("Image Contours", img_in);
     cv::waitKey();

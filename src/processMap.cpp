@@ -63,7 +63,10 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     cv::inRange(imgHSV, redHSV_L_1, redHSV_H_1, *redObjs_1); // extract first half of red objects
     cv::inRange(imgHSV, redHSV_L_2, redHSV_H_2, *redObjs_2); // extract second half of red objects
     cv::bitwise_or(*redObjs_1, *redObjs_2, redObjs); // merge the two extracted objects
-    delete redObjs_1, redObjs_2; // delete the 2 temporary Matrices 
+    
+    // delete the 2 temporary Matrices 
+    delete redObjs_1;
+    delete redObjs_2; 
 
     // display iamges if degub is enable
     #ifdef DEBUG_ACTIVE 
@@ -80,8 +83,7 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     std::vector<cv::Point> approx_curve;
 
     cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    for (int i = 0; i < contours.size(); ++i) {
+    for (unsigned int i = 0; i < contours.size(); ++i) {
         cv::approxPolyDP(contours[i], approx_curve, 3, true);
 
         if (approx_curve.size() > 7) {
@@ -110,7 +112,7 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     #endif
     cv::erode(redObjs, redObjs, element);
     
-    // display iamges if degub is enable
+    // display images if degub is enable
     #ifdef DEBUG_ACTIVE
         #ifdef BLUE_GATE
             cv::imshow("Blue Ojbs after erosion", blueObjs);
@@ -129,7 +131,7 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     #endif
     cv::dilate(redObjs, redObjs, element);
 
-    // display iamges if degub is enable
+    // display images if degub is enable
     #ifdef DEBUG_ACTIVE
         #ifdef BLUE_GATE
             cv::imshow("Blue Ojbs after dilate", blueObjs);
@@ -173,7 +175,7 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
             cv::approxPolyDP(*itvvp, *itvvp, 5, true);
     #else
         for(itvvp = green_polygons.begin(); itvvp != green_polygons.end(); itvvp ++)
-            cv::approxPolyDP(*itvvp, *itvvp, 5, true);
+            cv::approxPolyDP(*itvvp, *itvvp, 3, true);
     #endif
     for(itvvp = red_polygons.begin(); itvvp != red_polygons.end(); itvvp ++)
         cv::approxPolyDP(*itvvp, *itvvp, 5, true);
@@ -199,8 +201,11 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
         #endif
     #else
         for(itvvp = green_polygons.begin(); itvvp != green_polygons.end(); itvvp ++){
-            if(itvvp->size() == 4){
-                green_squares.emplace_back(*itvvp);
+            if(itvvp->size() < 7){
+                cv::approxPolyDP(*itvvp, *itvvp, 10, true);
+                if(itvvp->size() == 4){
+                    green_squares.emplace_back(*itvvp);
+                }
             }
         }
         if(green_squares.size() != 1){

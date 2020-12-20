@@ -38,9 +38,10 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
 
     for (int i = 0; i < 6; i++)
     {
-        std::string imageName = "../src/" + templatesFolder + "/" + std::to_string(i) + ".png";
+        std::string homePath = std::getenv("HOME");
+        std::string imageName = homePath + "/workspace/project/src/" + templatesFolder + "/" + std::to_string(i) + ".png";
         cv::Mat numTemplate = cv::imread(imageName);
-        
+
         // cv::flip(numTemplate, numTemplate, 1);
 
         for (int j = 0; j < 360/rotation_degrees; j++)
@@ -97,6 +98,7 @@ int detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector
     
     cv::resize(processROI, processROI, cv::Size(200, 200)); // resize the ROI
     cv::threshold(processROI, processROI, 100, 255, 0 ); // threshold and binarize the image, to suppress some noise
+    cv::flip(processROI, processROI, 0); // flip the image
 
     #ifdef DEBUG_ACTIVE
     cv::imshow("Process ROI",processROI);
@@ -106,7 +108,7 @@ int detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector
     double maxScore = 0;
     int num = -1;
     cv::Mat temp;
-    for (int i = 0; i < templates.size(); ++i) {
+    for (unsigned int i = 0; i < templates.size(); ++i) {
 
 
         // Match the ROI with the templates
@@ -142,7 +144,7 @@ void detectDigits(cv::Mat image, cv::Mat greenObjs){
 
     cv::findContours(greenObjs, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    for (int i = 0; i < contours.size(); ++i) {
+    for (unsigned int i = 0; i < contours.size(); ++i) {
         cv::approxPolyDP(contours[i], approx_curve, 3, true);
 
         if (approx_curve.size() > 10) {

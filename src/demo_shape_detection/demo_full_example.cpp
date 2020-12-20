@@ -63,7 +63,7 @@ void processImage()
   cv::findContours(red_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
   drawContours(contours_img, contours, -1, cv::Scalar(40,190,40), 1, cv::LINE_AA);
   std::cout << "N. contours: " << contours.size() << std::endl;
-  for (int i=0; i<contours.size(); ++i)
+  for (unsigned int i=0; i<contours.size(); ++i)
   {
     std::cout << (i+1) << ") Contour size: " << contours[i].size() << std::endl;
     approxPolyDP(contours[i], approx_curve, 7, true);
@@ -91,7 +91,7 @@ void processImage()
   cv::findContours(blue_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
   drawContours(contours_img, contours, -1, cv::Scalar(40,190,40), 1, cv::LINE_AA);
   std::cout << "N. contours: " << contours.size() << std::endl;
-  for (int i=0; i<contours.size(); ++i)
+  for (unsigned int i=0; i<contours.size(); ++i)
   {
     std::cout << (i+1) << ") Contour size: " << contours[i].size() << std::endl;
     double area = cv::contourArea(contours[i]);
@@ -125,7 +125,7 @@ void processImage()
   cv::findContours(black_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
   drawContours(contours_img, contours, -1, cv::Scalar(40,190,40), 1, cv::LINE_AA);
   std::cout << "N. contours: " << contours.size() << std::endl;
-  for (int i=0; i<contours.size(); ++i)
+  for (unsigned int i=0; i<contours.size(); ++i)
   {
     std::cout << (i+1) << ") Contour size: " << contours[i].size() << std::endl;
     approxPolyDP(contours[i], approx_curve, 7, true);

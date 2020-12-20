@@ -167,7 +167,7 @@ bool student_extrinsicCalib(const cv::Mat &img_in, std::vector<cv::Point3f> obje
             if (allLines[0].compare("x") == 0 && allLines[1].compare("y") == 0){
                 std::vector<std::string>::iterator its = allLines.begin(); // Define an iterator for allLines
                 its += 2; // waste the first line                               
-                for (its; its != allLines.end(); its++){
+                for (; its != allLines.end(); its++){
                     double x, y;
                     x = std::stod(*its);
                     its++;

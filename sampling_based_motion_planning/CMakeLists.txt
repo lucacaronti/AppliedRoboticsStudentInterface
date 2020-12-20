@@ -6,8 +6,8 @@ project(sbmp)
 add_compile_options(-std=c++11)
 
 # Only if there is an error:
-add_compile_options(-I/usr/include/opencv4/)
-add_compile_options(-I/home/luca/Documents/git/AppliedRoboticsStudentInterface/dubins_c++/inc/)
+# add_compile_options(-I/usr/include/opencv4/)
+add_compile_options(-I../../dubins_c++/inc/)
 
 find_package(OpenCV REQUIRED)
 
@@ -19,8 +19,6 @@ add_library(sbmp_libraries STATIC
 	src/hammersley.cpp
 	src/halton.cpp
 	src/dijkstra.cpp
-	# inc/CvPlot/cvplot.h
-	../../dubins_c++/inc/CvPlot/cvplot.h
 )
 
 target_include_directories(sbmp_libraries PUBLIC inc)

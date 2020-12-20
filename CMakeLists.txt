@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(student_proect)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 -Wall)
 
 find_package(OpenCV REQUIRED )
 find_package(project_interface REQUIRED )
@@ -18,6 +18,7 @@ include_directories(
 ## CREATE EXECUTABLE LIBRARY
 add_library(student SHARED
    src/student_interface.cpp
+   src/detectDigits.cpp
    src/extrinsicCalib.cpp
    src/findRobot.cpp
    src/processMap.cpp
