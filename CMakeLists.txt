@@ -11,6 +11,8 @@ find_package(project_interface REQUIRED )
 include_directories(
  include 
  inc
+ sampling_based_motion_planning/inc
+ dubins_c++/inc/
  ${OpenCV_INCLUDE_DIRS}
  ${project_interface_INCLUDE_DIRS}
 )
@@ -22,6 +24,13 @@ add_library(student SHARED
    src/extrinsicCalib.cpp
    src/findRobot.cpp
    src/processMap.cpp
+   sampling_based_motion_planning/src/sbmp.cpp
+   sampling_based_motion_planning/src/sampling.cpp
+	 sampling_based_motion_planning/src/dubins.cpp
+	 sampling_based_motion_planning/src/dubins_primitives.cpp
+   sampling_based_motion_planning/src/intersections.cpp
+   sampling_based_motion_planning/src/halton.cpp
+   sampling_based_motion_planning/src/dijkstra.cpp
 )
 
 target_link_libraries(student
@@ -74,9 +83,9 @@ target_link_libraries(demo_simple_shape_detection
 )
 
 # COMPILE STUDENT FUNCTIONS
-include_directories(
-  inc
-)
+# include_directories(
+#   inc
+# )
 
 ### Compile directly (with own main) processMap ###
 # add_executable(processMap

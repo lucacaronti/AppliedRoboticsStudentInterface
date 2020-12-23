@@ -3,10 +3,12 @@
 #include "processMap.hpp"
 #include "findRobot.hpp"
 #include "extrinsicCalib.hpp"
+#include "sbmp.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <stdexcept>
 #include <sstream>
+#include <map>
 namespace student {
 
   /**
@@ -177,10 +179,128 @@ namespace student {
     return student_findRobot(img_in, scale, triangle, x, y, theta, config_folder);
   }
 
-  bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list, const std::vector<std::pair<int,Polygon>>& victim_list, const Polygon& gate, const float x, const float y, const float theta, Path& path){
+  bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list,  const std::vector<std::pair<int,Polygon>>& victim_list,  const Polygon& gate, const float x, const float y, const float theta,  Path& path, const std::string& config_folder){
+    std::cout<<"[STUDENT] : planPath"<<std::endl;
+    
+    /* Convert obstacle type into std::vector<cv::Point2d> */
+    std::vector<std::vector<cv::Point2d> > obstacle_list_d;
+    for(auto it_ol = obstacle_list.begin(); it_ol != obstacle_list.end(); it_ol++){
+      std::vector<cv::Point2d> tmp_obstacle;
+      for(auto it_pol = it_ol->begin(); it_pol != it_ol->end(); it_pol++){
+        tmp_obstacle.emplace_back(cv::Point2d(double(it_pol->x), double(it_pol->y)));
+      }
+      obstacle_list_d.push_back(tmp_obstacle);
+    }
+
+    /* Convert gate type into std::vector<cv::Point2f> */
+    std::vector<cv::Point2f> gate_f;
+    for(auto it_pol = gate.begin(); it_pol != gate.end(); it_pol++){
+      gate_f.emplace_back(cv::Point2f(it_pol->x, it_pol->y));
+    }
+
+    /* Convert victim type into std::vector<std::pair<int,std::vector<cv::Point2d> > >, and calculate their center*/
+    std::vector<std::pair<int,std::vector<cv::Point2d> > > victim_list_d;
+    std::map<int, cv::Point2d> victims_center;
+    for(auto it_vl = victim_list.begin(); it_vl != victim_list.end(); it_vl++){
+      std::vector<cv::Point2d> tmp_polygon_d;
+      std::vector<cv::Point2f> tmp_polygon_f;
+      for(auto it_pol = it_vl->second.begin(); it_pol != it_vl->second.end(); it_pol++){
+        tmp_polygon_d.emplace_back(cv::Point2d(double(it_pol->x), double(it_pol->y)));
+        tmp_polygon_f.emplace_back(cv::Point2f(float(it_pol->x), float(it_pol->y)));
+      }
+      victim_list_d.emplace_back(std::pair<int,std::vector<cv::Point2d> >(it_vl->first, tmp_polygon_d));
+      cv::Moments m_victim = cv::moments(tmp_polygon_f, false);
+      cv::Point2d victim_center = Point2d(m_victim.m10/m_victim.m00 , m_victim.m01/m_victim.m00);
+      victims_center.insert(std::pair<int, cv::Point2d>(it_vl->first, victim_center));
+
+    }
+
+    /* Calculate gate center */
+    cv::Moments m_gate = cv::moments(gate_f, false);
+    cv::Point2d gate_center = Point2d(m_gate.m10/m_gate.m00 , m_gate.m01/m_gate.m00);
+  
+    cv::Point2d start_point_d = Point2d(double(x),double(y));
+
+    Sbmp sbmp;
+    unsigned int N_sample = 5000;
+    sbmp.sample(N_sample, double(borders[1].x), double(borders[2].y));
+    sbmp.add_custom_point(start_point_d);
+    sbmp.add_custom_point(victims_center[1]);
+    sbmp.add_custom_point(victims_center[3]);
+    sbmp.add_custom_point(victims_center[4]);
+    sbmp.add_custom_point(victims_center[5]);
+    sbmp.add_custom_point(gate_center);
+    // sbmp.plot_points();
+    sbmp.erase_sample_inside_obstacles(obstacle_list_d);
+
+    unsigned int num_neighbours = 4;
+    sbmp.create_graph(num_neighbours, obstacle_list_d);
+
+    /* Calculate path directly from robot to gate */
+    std::vector<cv::Point2d> best_path;
+    if(!sbmp.find_shortest_path(start_point_d, gate_center, best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+
+    sbmp.plot_paths(best_path, obstacle_list_d);
+    sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    sbmp.plot_paths(best_path, obstacle_list_d);
+
+    DubinsCurve dc;
+    dc.set_k(50);
+    dc.add_start_data(best_path[0].x, best_path[0].y, theta);
+    dc.add_final_data(best_path[best_path.size()-1].x, best_path[best_path.size()-1].y, M_PI_2);
+    for(auto it = best_path.begin() + 1; it != best_path.end() - 1; it++){
+        dc.add_middle_points(it->x, it->y);
+    }
+    dc.solver(3,16);
+    dc.plot();
+
+
+    /* Calculate path considering the victims */
+    // Victim 1
+    best_path.clear();
+    std::cout<<start_point_d.x<<","<<start_point_d.y<<" "<<victims_center[1].x<<","<<victims_center[1].y<<std::endl;
+    if(!sbmp.find_shortest_path(start_point_d, victims_center[1], best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    sbmp.plot_paths(best_path, obstacle_list_d);
+
+    //Victim 3
+    std::cout<<victims_center[1].x<<","<<victims_center[1].y<<" "<<victims_center[3].x<<","<<victims_center[3].y<<std::endl;
+    best_path.clear();
+    if(!sbmp.find_shortest_path(victims_center[1], victims_center[3], best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    sbmp.plot_paths(best_path, obstacle_list_d);
+
+    //Victim 4
+    std::cout<<victims_center[3].x<<","<<victims_center[3].y<<" "<<victims_center[4].x<<","<<victims_center[4].y<<std::endl;
+    best_path.clear();
+    if(!sbmp.find_shortest_path(victims_center[3], victims_center[4], best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    sbmp.plot_paths(best_path, obstacle_list_d);
+
+    //Victim 5
+    std::cout<<victims_center[4].x<<","<<victims_center[4].y<<" "<<victims_center[5].x<<","<<victims_center[5].y<<std::endl;
+    best_path.clear();
+    if(!sbmp.find_shortest_path(victims_center[4], victims_center[5], best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    sbmp.plot_paths(best_path, obstacle_list_d);
+
+    //Gate
+    std::cout<<victims_center[5].x<<","<<victims_center[5].y<<" "<<gate_center.x<<","<<gate_center.y<<std::endl;
+    best_path.clear();
+    if(!sbmp.find_shortest_path(victims_center[5], gate_center, best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    sbmp.plot_paths(best_path, obstacle_list_d);
+
+
+   
+
     throw std::logic_error( "STUDENT FUNCTION - PLAN PATH - NOT IMPLEMENTED" );     
   }
-
-
 }
 

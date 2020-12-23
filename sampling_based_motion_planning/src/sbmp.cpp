@@ -3,18 +3,19 @@
 #include <vector>
 #include <opencv2/core.hpp>
 #include <opencv2/flann.hpp>
-#include "sampling.hpp"
-#include "dijkstra.hpp"
 #include <chrono>
+#include "sbmp.hpp"
 // library for plots
 #define CVPLOT_HEADER_ONLY
 #include <CvPlot/cvplot.h>
 
+#define MAIN_DEFINED
+
 // Plot vector of points //
-void plot_points(const std::vector<cv::Point2d> points)
+void Sbmp::plot_points() const
 {
     auto axes = CvPlot::makePlotAxes();
-    for (auto itvp = points.begin(); itvp != points.end(); itvp++)
+    for (auto itvp = sample_points.begin(); itvp != sample_points.end(); itvp++)
     {
         std::vector<cv::Point2d> tmp_point;
         tmp_point.push_back(*itvp);
@@ -27,7 +28,7 @@ void plot_points(const std::vector<cv::Point2d> points)
 }
 
 // Plot a graph end the best path //
-void plot_paths(const Dijkstra& d, const std::vector<cv::Point2d>& best_path){
+void Sbmp::plot_paths(const std::vector<cv::Point2d>& best_path, const std::vector<std::vector<cv::Point2d> >& obstacles) const{
     auto axes = CvPlot::makePlotAxes();
 
     std::vector<std::vector<cv::Point2d> > connections;
@@ -42,6 +43,16 @@ void plot_paths(const Dijkstra& d, const std::vector<cv::Point2d>& best_path){
     }
     for (auto it = connections.begin(); it != connections.end(); it++)
         axes.create<CvPlot::Series>(*it, "g-");
+    
+    for (auto it = obstacles.begin(); it != obstacles.end(); it++){
+        axes.create<CvPlot::Series>(*it, "b-o");
+
+        std::vector<cv::Point2f> tmp_line;
+        tmp_line.emplace_back(it->at(0));
+        tmp_line.emplace_back(it->at(it->size()-1));
+        axes.create<CvPlot::Series>(tmp_line, "b-o");
+
+    }
 
     axes.create<CvPlot::Series>(best_path, "k-");
 
@@ -51,49 +62,72 @@ void plot_paths(const Dijkstra& d, const std::vector<cv::Point2d>& best_path){
     cv::destroyWindow("mywindow");
 }
 
+bool doIntersectWithObstacles(const std::vector<cv::Point2d> segment, const std::vector<std::vector<cv::Point2d> >& obstacles){
+    Intersections intersections;
+    for(auto itvvp = obstacles.begin(); itvvp != obstacles.end(); itvvp++){ //Iterate for each obstacle
+        for(auto itvp = itvvp->begin(); itvp != itvvp->end(); itvp++){ //Iterate for each face of polygon
+            cv::Point2d point_a(itvp->x, itvp->y);
+            cv::Point2d point_b;
+            if(itvp+1 == itvvp->end()){
+                point_b.x = itvvp->at(0).x;
+                point_b.y = itvvp->at(0).y;
+            }else{
+                point_b.x = (itvp+1)->x;
+                point_b.y = (itvp+1)->y;
+            }
+            std::vector<cv::Point2d> obstacle_face = {point_a, point_b}; // Create polygon face line 
+            // if(intersections.intersLineLine(segment, obstacle_face)){ // Check if intersect
+            if(doIntersect(segment[0], segment[1], obstacle_face[0], obstacle_face[1])){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Calculate the euclidian distance from 2 2d points //
 double dist2d(cv::Point2d p1, cv::Point2d p2)
 {
     return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
-int main(int argc, char *argv[]){
+/*** Sbpm class functions ***/
+/****************************/
+Sbmp::Sbmp(/* args */)
+{
+    N_jobs = 1;
+}
 
-    if (argc != 6)
-    {
-        std::cout << "Error, usage: ./sbmp.out n_sample n_neighbours sampling_type start end" << std::endl;
-        std::cout << "Example ./sbmp 1000 20 halton 0 999"<<std::endl;
-        return -1;
+Sbmp::~Sbmp()
+{
+}
+void Sbmp::sample(unsigned int N_points, double size_x=1, double size_y=1, sample_type st){
+    if(st == halton_sampling){
+        sample_points = s.generate_N_Halton_points_multithread(N_points,this->N_jobs); //Generate N_points in 2D space normalized between (0,0) and (1,1)
+        if(size_x != 1 || size_y != 1){ //Check is a resize is needed
+            for(auto it = sample_points.begin(); it != sample_points.end(); it++){
+                it->x *= size_x;
+                it->y *= size_y;
+            }
+        }
     }
-    unsigned int N_points = atoi(argv[1]);
-    unsigned int max_neighbours = atoi(argv[2]);
-    std::string sampling_type = std::string(argv[3]);
-    unsigned int start = atoi(argv[4]);
-    unsigned int end = atoi(argv[5]);
-
-    auto time_start = std::chrono::high_resolution_clock::now();
-
-    /********** Sampling **********/
-    Sampling s;
-    std::vector<cv::Point2d> sample_points;
-
-    if(sampling_type == "halton"){
-        sample_points = s.generate_N_Halton_points(N_points);
-        sample_points[start] = cv::Point2d(0,0);
-        sample_points[end] = cv::Point2d(1,1);
+    else if(st == random_sampling){
+        sample_points = s.generate_N_rnd_points(N_points, size_x, size_y); //Generate N_points in 2D space normalized between (0,0) and (size_x,size_y)
     }
-    else if(sampling_type == "random"){
-        sample_points = s.generate_N_rnd_points(N_points, 1000, 1000);
-        sample_points[start] = cv::Point2d(0, 0);
-        sample_points[end] = cv::Point2d(1000, 1000);
-    }
-    else{
-        std::cout<<"Error, "<<sampling_type<<" arg not found"<<std::endl;
-        return -1;
-    }
-    /********** End sampling **********/
+}
+void Sbmp::erase_sample_inside_obstacles(std::vector<std::vector<cv::Point2d> >& obstacles){
+    for(auto itvp=sample_points.begin(); itvp != sample_points.end(); itvp++){ // Iterate all sample points
+        for(auto itvvp = obstacles.begin(); itvvp != obstacles.end(); itvvp++){ // Iterate all obstacles
+            std::vector<cv::Point2f> tmp_obstacle_f(itvvp->begin(), itvvp->end());
+            if(cv::pointPolygonTest(tmp_obstacle_f, cv::Point2f(float(itvp->x), float(itvp->y)), false) != -1){ // Check is point is inside the polygon
+                sample_points.erase(itvp); // Erase the point
+                break; // Stop che for loop
+            }
 
-    auto time_sampling = std::chrono::high_resolution_clock::now();
+        }
+    }
+}
+void Sbmp::create_graph(unsigned int N_neighbours, std::vector<std::vector<cv::Point2d> >& obstacles){
 
     /********** Start kd-tree construction and search **********/
     cv::Mat_<float> features(0, 2);
@@ -109,59 +143,254 @@ int main(int argc, char *argv[]){
 
     cv::Mat indices, dists; //neither assume type nor size here !
 
-    flann_index.knnSearch(features, indices, dists, max_neighbours);
-
-    auto time_knn = std::chrono::high_resolution_clock::now();
-
+    flann_index.knnSearch(features, indices, dists, N_neighbours + 1);
     /********** End kd-tree construction and search **********/
 
-    /********** Create a graph for Dijkstra **********/
-    Dijkstra d;
-
-    auto time_construct_graph_start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < indices.rows; i++)
+    /********** Create a graph **********/
+    for (int i = 0; i < indices.rows; i++) // Iterate each point
     {
-        bool found_connection = false;
-        for (int j = 1; j < max_neighbours; j++)
+        for (unsigned int j = 1; j < N_neighbours + 1; j++) // Find N_neighbours
         {
-            int index = indices.at<int>(i, j);
-            double dist = dist2d(sample_points[i], sample_points[index]);
-            bool ret = d.addEdge(sample_points[i], sample_points[index], dist);
-            if(ret) found_connection = true;
+            int index = indices.at<int>(i, j); // take index of neighbour point
+            double dist = dist2d(sample_points[i], sample_points[index]); // Calculate the distance between points
+            bool collision = false;
+            std::vector<cv::Point2d> segment = {sample_points[i], sample_points[index]}; // Create the graph line
+            collision = doIntersectWithObstacles(segment, obstacles);
+            if(!collision)
+                d.addEdge(sample_points[i], sample_points[index], dist); // Add connection to the graph
         }
     }
     /********** End graph creation **********/
-
-    auto time_construct_graph_ens = std::chrono::high_resolution_clock::now();
-
-    auto time_dijkstra_start = std::chrono::high_resolution_clock::now();
-    std::vector<cv::Point2d> best_path;
-
-    /********** Find best path with Dijkstra **********/
-    if(!d.shortesPath(sample_points[start], sample_points[end], best_path)){
-        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+}
+bool Sbmp::find_shortest_path(cv::Point2d start_point, cv::Point2d end_point, std::vector<cv::Point2d>& best_path){
+    return d.shortesPath(start_point, end_point, best_path);
+}
+void Sbmp::add_custom_point(cv::Point2d pt){
+    sample_points.emplace_back(pt);
+}
+void Sbmp::find_discardable_points(std::vector<cv::Point2d>& best_path, unsigned int start_index, unsigned int end_index, std::vector<std::vector<cv::Point2d> >& obstacles, std::vector<cv::Point2d>& discarded_points){
+    if(end_index - start_index < 2){
+        return;
     }
+    std::vector<cv::Point2d> tmp_segment;
+    tmp_segment.push_back(cv::Point2d(best_path[start_index]));
+    tmp_segment.push_back(cv::Point2d(best_path[end_index]));
+    if(doIntersectWithObstacles(tmp_segment, obstacles)){
+        find_discardable_points(best_path, start_index + int((end_index-start_index)/2), end_index, obstacles, discarded_points);
+        find_discardable_points(best_path, start_index, end_index - (int((end_index-start_index)/2) + int((end_index-start_index)%2)), obstacles, discarded_points);
+    }else{
+        for(unsigned int i = start_index+1; i < end_index; i++){
+            discarded_points.emplace_back(cv::Point2d(best_path[i]));
+        }
+        return;
+    }
+}
+void Sbmp::best_path_optimizer(std::vector<cv::Point2d>& best_path, std::vector<std::vector<cv::Point2d> >& obstacles){
+    std::vector<cv::Point2d> discarded_points;
+    do{
+        discarded_points.clear();
+        this->find_discardable_points(best_path,0, best_path.size()-1, obstacles, discarded_points);
+        for(auto it_wp = discarded_points.begin(); it_wp != discarded_points.end(); it_wp++){
+            for(auto it_bp = best_path.begin(); it_bp != best_path.end(); it_bp++){
+                if(*it_wp == *it_bp){
+                    best_path.erase(it_bp);
+                    break;
+                }
+            }
+        }
+    } while (!discarded_points.empty());
+    
+}
+
+#ifdef MAIN_DEFINED
+
+/************************************/
+/*************** MAIN ***************/
+/************************************/
+int main(int argc, char *argv[]){
+
+    std::vector<cv::Point2d> borders;
+    borders.emplace_back(cv::Point2d(0,0));
+    borders.emplace_back(cv::Point2d(1.56,0));
+    borders.emplace_back(cv::Point2d(1.56,1.06));
+    borders.emplace_back(cv::Point2d(0,1.06));
+
+    std::vector<std::vector<cv::Point2d> > obstacles;
+    std::vector<cv::Point2d> tmp_obstacle;
+    // tmp_obstacle.emplace_back(cv::Point2d());
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.90675,0.6435));
+    tmp_obstacle.emplace_back(cv::Point2d(0.88725,0.69615));
+    tmp_obstacle.emplace_back(cv::Point2d(0.9399,0.72735));
+    tmp_obstacle.emplace_back(cv::Point2d(0.9789,0.69615));
+    tmp_obstacle.emplace_back(cv::Point2d(0.96135,0.64545));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+	
+	tmp_obstacle.emplace_back(cv::Point2d(0.69615,0.64155));
+    tmp_obstacle.emplace_back(cv::Point2d(0.76245,0.77805));
+    tmp_obstacle.emplace_back(cv::Point2d(0.7761,0.77805));
+    tmp_obstacle.emplace_back(cv::Point2d(0.85215,0.64545));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.4953,0.59085));
+    tmp_obstacle.emplace_back(cv::Point2d(0.5577,0.69615));
+    tmp_obstacle.emplace_back(cv::Point2d(0.61425,0.5967));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.31785,0.59085));
+    tmp_obstacle.emplace_back(cv::Point2d(0.2886,0.6747));
+    tmp_obstacle.emplace_back(cv::Point2d(0.351,0.7176));
+    tmp_obstacle.emplace_back(cv::Point2d(0.4251,0.67665));
+    tmp_obstacle.emplace_back(cv::Point2d(0.4017,0.59085));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.16185,0.59085));
+    tmp_obstacle.emplace_back(cv::Point2d(0.2028,0.66105));
+    tmp_obstacle.emplace_back(cv::Point2d(0.23985,0.59085));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.039,0.58695));
+    tmp_obstacle.emplace_back(cv::Point2d(0.02535,0.64545));
+    tmp_obstacle.emplace_back(cv::Point2d(0.06045,0.67275));
+    tmp_obstacle.emplace_back(cv::Point2d(0.08385,0.67275));
+    tmp_obstacle.emplace_back(cv::Point2d(0.1209,0.6435));
+    tmp_obstacle.emplace_back(cv::Point2d(0.1014,0.5889));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.93405,0.4446));
+    tmp_obstacle.emplace_back(cv::Point2d(0.8892,0.52455));
+    tmp_obstacle.emplace_back(cv::Point2d(0.93795,0.61425));
+    tmp_obstacle.emplace_back(cv::Point2d(0.83155,0.6123));
+    tmp_obstacle.emplace_back(cv::Point2d(0.88225,0.5304));
+    tmp_obstacle.emplace_back(cv::Point2d(0.83545,0.44265));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.6942,0.4446));
+    tmp_obstacle.emplace_back(cv::Point2d(0.6942,0.5772));
+    tmp_obstacle.emplace_back(cv::Point2d(0.82485,0.5811));
+    tmp_obstacle.emplace_back(cv::Point2d(0.82095,0.44265));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.49335,0.44265));
+    tmp_obstacle.emplace_back(cv::Point2d(0.48945,0.54405));
+    tmp_obstacle.emplace_back(cv::Point2d(0.59085,0.54405));
+    tmp_obstacle.emplace_back(cv::Point2d(0.5928,0.4446));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.3198,0.44265));
+    tmp_obstacle.emplace_back(cv::Point2d(0.28665,0.4992));
+    tmp_obstacle.emplace_back(cv::Point2d(0.32955,0.56745));
+    tmp_obstacle.emplace_back(cv::Point2d(0.39975,0.56745));
+    tmp_obstacle.emplace_back(cv::Point2d(0.43485,0.5109));
+    tmp_obstacle.emplace_back(cv::Point2d(0.4056,0.45045));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.05265,0.4368));
+    tmp_obstacle.emplace_back(cv::Point2d(0.02535,0.47775));
+    tmp_obstacle.emplace_back(cv::Point2d(0.04875,0.5226));
+    tmp_obstacle.emplace_back(cv::Point2d(0.10335,0.5187));
+    tmp_obstacle.emplace_back(cv::Point2d(0.12285,0.4836));
+    tmp_obstacle.emplace_back(cv::Point2d(0.10335,0.44265));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+    tmp_obstacle.emplace_back(cv::Point2d(0.15795,0.43485));
+    tmp_obstacle.emplace_back(cv::Point2d(0.1599,0.5031));
+    tmp_obstacle.emplace_back(cv::Point2d(0.22035,0.50895));
+    tmp_obstacle.emplace_back(cv::Point2d(0.2301,0.43875));
+    obstacles.emplace_back(tmp_obstacle);
+    tmp_obstacle.clear();
+
+
+
+    if (argc != 5)
+    {
+        std::cout << "Error, usage: ./sbmp.out n_sample n_neighbours sampling_type N_jobs" << std::endl;
+        std::cout << "Example ./sbmp 1000 20 halton 1"<<std::endl;
+        return -1;
+    }
+    unsigned int N_points = atoi(argv[1]);
+    unsigned int max_neighbours = atoi(argv[2]);
+    std::string sampling_type = std::string(argv[3]);
+
+    Sbmp sbmp;
+    sbmp.N_jobs = atoi(argv[4]);
+
+    /********** Sampling **********/
+    auto time_sampling_start = std::chrono::high_resolution_clock::now();
+    sbmp.sample(N_points, borders[1].x, borders[2].y);
+    sbmp.add_custom_point(cv::Point2d(0,0));
+    sbmp.add_custom_point(cv::Point2d(1,1));
+    sbmp.erase_sample_inside_obstacles(obstacles);
+    auto time_sampling_end = std::chrono::high_resolution_clock::now();
+    /********** End sampling **********/
+
+    /********** Start graph construction **********/
+    auto time_construct_graph_start = std::chrono::high_resolution_clock::now();
+    sbmp.create_graph(max_neighbours, obstacles);
+    auto time_construct_graph_end = std::chrono::high_resolution_clock::now();
+    /********** End graph construction **********/
+
+
+    std::vector<cv::Point2d> best_path;
+    /********** Find best path with Dijkstra **********/
+    auto time_dijkstra_start = std::chrono::high_resolution_clock::now();
+    if(!sbmp.find_shortest_path(cv::Point2d(0,0), cv::Point2d(1,1), best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    auto time_dijkstra_end = std::chrono::high_resolution_clock::now();
     /********** End Dijkstra **********/
 
-    auto time_dijkstra_end = std::chrono::high_resolution_clock::now();
-
     /********** Print time stats **********/
-    auto duration_sampling = std::chrono::duration_cast<std::chrono::microseconds>(time_sampling - time_start);
+    auto duration_sampling = std::chrono::duration_cast<std::chrono::microseconds>(time_sampling_end - time_sampling_start);
     std::cout<<"Duration sampling: "<<duration_sampling.count()<<" us"<<std::endl;
 
-    auto duration_knn = std::chrono::duration_cast<std::chrono::microseconds>(time_knn - time_sampling);
-    std::cout << "Duration knn: " << duration_knn.count() << " us" << std::endl;
-
-    auto duration_construction_graph = std::chrono::duration_cast<std::chrono::microseconds>(time_construct_graph_ens - time_construct_graph_start);
+    auto duration_construction_graph = std::chrono::duration_cast<std::chrono::microseconds>(time_construct_graph_end - time_construct_graph_start);
     std::cout << "Duration construction graph: " << duration_construction_graph.count() << " us" << std::endl;
 
     auto duration_dijkstra = std::chrono::duration_cast<std::chrono::microseconds>(time_dijkstra_end - time_dijkstra_start);
     std::cout << "Duration Dijkstra: " << duration_dijkstra.count() << " us" << std::endl;
 
+    // Plot path
+    sbmp.plot_paths(best_path, obstacles);
+    
+    sbmp.best_path_optimizer(best_path, obstacles);
+    sbmp.plot_paths(best_path, obstacles);
+
+    /********** Dubins **********/
+    DubinsCurve dc;
+    dc.set_k(50);
+    dc.add_start_data(best_path[0].x, best_path[0].y, 0);
+    dc.add_final_data(best_path[best_path.size()-1].x, best_path[best_path.size()-1].y, 0);
+    for(auto it = best_path.begin() + 1; it != best_path.end() - 1; it++){
+        dc.add_middle_points(it->x, it->y);
+    }
+    dc.solver(3,16);
+    dc.plot();
+
+    best_path.clear();
+    /********** Find best path with Dijkstra **********/
+    time_dijkstra_start = std::chrono::high_resolution_clock::now();
+    if(!sbmp.find_shortest_path(sbmp.sample_points[20], sbmp.sample_points[1], best_path))
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    time_dijkstra_end = std::chrono::high_resolution_clock::now();
+    /********** End Dijkstra **********/
+    duration_dijkstra = std::chrono::duration_cast<std::chrono::microseconds>(time_dijkstra_end - time_dijkstra_start);
+    std::cout << "Duration Dijkstra: " << duration_dijkstra.count() << " us" << std::endl;
 
     // Plot path
-    plot_paths(d, best_path);
+    sbmp.plot_paths(best_path, obstacles);
 
     return 0;
 }
+
+#endif

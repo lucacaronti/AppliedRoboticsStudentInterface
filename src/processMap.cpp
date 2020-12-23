@@ -89,6 +89,7 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
         if (approx_curve.size() > 7) {
             int ret = detectSingleDigit(boundingRect(cv::Mat(approx_curve)),img_in ,greenObjs,templates);
             if(ret != -1){
+                cv::fillConvexPoly(greenObjs, contours[i], cv::Scalar(255));
                 Polygon tmp_victim;
                 std::vector<cv::Point>::iterator itvp;
                 for(itvp = approx_curve.begin(); itvp != approx_curve.end(); itvp++){
@@ -210,7 +211,7 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
         }
         if(green_squares.size() != 1){
             std::cerr<<"[ERROR] Found more than one gate"<<std::endl;
-            return false;
+            // return false;
         }
         #ifdef DEBUG_ACTIVE
             std::cout<<"Green GATE found"<<std::endl;
