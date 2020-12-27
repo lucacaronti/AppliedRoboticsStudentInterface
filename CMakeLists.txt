@@ -24,6 +24,8 @@ add_library(student SHARED
    src/extrinsicCalib.cpp
    src/findRobot.cpp
    src/processMap.cpp
+   src/resize.cpp
+   src/clipper.cpp
    sampling_based_motion_planning/src/sbmp.cpp
    sampling_based_motion_planning/src/sampling.cpp
 	 sampling_based_motion_planning/src/dubins.cpp

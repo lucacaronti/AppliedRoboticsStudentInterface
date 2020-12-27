@@ -351,37 +351,6 @@ bool DubinsCurve::solver(int m, int k){
     return true;
 }
 
-void DubinsCurve::plot() const{
-    vector<float> data_x;
-    vector<float> data_y;
-
-    auto axes = CvPlot::makePlotAxes();
-
-    for(long unsigned int i = 0; i < multi_curve.size(); i++){
-        // Plot arcs
-        tie(data_x, data_y) = plotarc(multi_curve[i].second.a1);
-        axes.create<CvPlot::Series>(data_x, data_y, "-g"); 
-
-        tie(data_x, data_y) = plotarc(multi_curve[i].second.a2);
-        axes.create<CvPlot::Series>(data_x, data_y, "-b"); 
-
-        tie(data_x, data_y) = plotarc(multi_curve[i].second.a3);
-        axes.create<CvPlot::Series>(data_x, data_y, "-r"); 
-
-        axes.create<CvPlot::Series>(float(multi_curve[i].second.a1.x0), float(multi_curve[i].second.a1.y0), "k-o");
-        if(i == 0){
-            axes.create<CvPlot::Series>(float(multi_curve[i].second.a3.xf), float(multi_curve[i].second.a3.yf), "k-o");
-        }
-    }
-
-    Mat mat = axes.render(800, 800);
-    imshow("Dubins Best Path", mat);
-
-    waitKey();
-
-    return;
-}
-
 // Compute the distance of subset path. Save also the found curves
 double minD_j(double x0,double y0, double xf, double yf, double k, const vector<double>& th0s, double thf, \
         vector<pair<int ,curve> >& multi_curve ){
@@ -450,6 +419,85 @@ double L(int j, int n, const vector<Point2d>& middle_points,
             return minD_j(middle_points[j-1].x, middle_points[j-1].y, middle_points[j].x, middle_points[j].y, kmax, angles, last_th0, tmp_multi_curve) + tmp_L;
         }
     }
+}
+
+
+void DubinsCurve::plot() const{
+    vector<float> data_x;
+    vector<float> data_y;
+
+    auto axes = CvPlot::makePlotAxes();
+
+    for(long unsigned int i = 0; i < multi_curve.size(); i++){
+        // Plot arcs
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a1);
+        axes.create<CvPlot::Series>(data_x, data_y, "-g"); 
+
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a2);
+        axes.create<CvPlot::Series>(data_x, data_y, "-b"); 
+
+        tie(data_x, data_y) = plotarc(multi_curve[i].second.a3);
+        axes.create<CvPlot::Series>(data_x, data_y, "-r"); 
+
+        axes.create<CvPlot::Series>(float(multi_curve[i].second.a1.x0), float(multi_curve[i].second.a1.y0), "k-o");
+        if(i == 0){
+            axes.create<CvPlot::Series>(float(multi_curve[i].second.a3.xf), float(multi_curve[i].second.a3.yf), "k-o");
+        }
+    }
+
+    Mat mat = axes.render(800, 800);
+    imshow("Dubins Best Path", mat);
+
+    waitKey(0);
+
+    return;
+}
+
+/*****************************************************************************/
+
+void DubinsCurve::getPath(curve c, Path &path){
+    static double len = 0;
+    int npts = 10;
+    double x, y, th;
+
+    double step = c.L/npts;
+    double s1, s2, s3;
+
+    for(int i = 0; i < floor(c.a1.L/step); i++){
+        s1 = step * i;
+        len += step;
+
+        tie(x, y, th) = circline(s1, c.a1.x0, c.a1.y0, c.a1.th0, c.a1.k);
+        path.points.emplace_back(len,x,y,th,c.a1.k);
+    }
+
+    for(int i = 0; i < floor(c.a2.L/step); i++){
+        s2 =  step * i;
+        len += step;
+
+        tie(x, y, th) = circline(s2, c.a2.x0, c.a2.y0, c.a2.th0, c.a2.k);
+        path.points.emplace_back(len,x,y,th,c.a2.k);
+    }
+
+    for(int i = 0; i < floor(c.a3.L/step); i++){
+        s3 =  step * i;
+        len += step;
+
+        tie(x, y, th) = circline(s3, c.a3.x0, c.a3.y0, c.a3.th0, c.a3.k);
+        path.points.emplace_back(len,x,y,th,c.a3.k);
+    }
+
+}
+
+Path DubinsCurve::computePath(){
+
+    Path path;
+    for(long unsigned int i = 0; i < multi_curve.size(); i++){
+        curve c = multi_curve[i].second;
+        getPath(c, path);
+    }
+
+    return path;
 }
 
 // int main()
