@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "dubins_primitives.hpp"
 
-
+#include "utils.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
@@ -79,6 +79,7 @@ double minD_j(double x0,double y0, double xf, double yf, double k, const vector<
     vector<pair<int ,curve> >& multi_curve);
 
 
+
 class DubinsCurve{
 private:
     double x0, y0, th0;
@@ -93,8 +94,10 @@ public:
   void add_start_data(double x0, double y0, double th0);
   void add_final_data(double xf, double yf, double thf);
   void add_middle_points(double px, double py);
-  bool solver(int m, int k);
+  bool solver(int m, int k); 
   void plot() const;
+  void getPath(curve c, Path &path);
+  Path computePath();
 };
 
 

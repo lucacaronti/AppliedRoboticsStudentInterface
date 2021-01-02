@@ -2,7 +2,7 @@
 #include <math.h>
 #include "utils.hpp"
 
-#define DEBUG_ACTIVE
+// #define DEBUG_ACTIVE
 // #define MAIN_ACTIVE // remember to change also the CmakeList.txt
 
 /*!
@@ -131,7 +131,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     /* colculate theta */
-    theta = atan2(vertex.y - cy, vertex.x - cx);
+    theta = atan2(vertex.y - cy, vertex.x - cx) - M_PI;
     x = cx;
     y = cy;
 
