@@ -13,11 +13,13 @@ namespace cv{
     }
 }
 
-Dijkstra::Dijkstra(){
-}
-
+Dijkstra::Dijkstra(){}
+Dijkstra::~Dijkstra(){}
+/*!
+  * @brief Print all nodes connections
+  */
 void Dijkstra::print() const{
-    std::cout<<nodes.size()<<std::endl;
+    std::cout<<"Numer of nodes: "<<nodes.size()<<std::endl;
     for(auto itm = nodes.begin(); itm != nodes.end(); itm++){
         std::cout << "node(" << itm->first.x << "," << itm->first.y << ")" << std::endl;
         for(auto itl = itm->second.begin(); itl != itm->second.end(); itl++){
@@ -26,7 +28,14 @@ void Dijkstra::print() const{
     }
 }
 
-bool Dijkstra::addEdge(cv::Point2d start, cv::Point2d end, double weight){
+/*!
+  * @brief Add a edge in the graph
+  * @param[in]  cv::Point2d start   start point of the edge
+  * @param[in]  cv::Point2d end     end point of the edge
+  * @param[in]  double weight       the weight of the edge
+  * @return[bool] false if the edge already exists, true otherwise
+  */
+bool Dijkstra::addEdge(const cv::Point2d start, const cv::Point2d end, const double weight){
     auto start_node = nodes.find(start);
     auto end_node = nodes.find(end);
 
@@ -50,7 +59,7 @@ bool Dijkstra::addEdge(cv::Point2d start, cv::Point2d end, double weight){
     }else{
         std::list<distNode_t> tmp_list;
         tmp_list.emplace_back(weight, end);
-        nodes.emplace(std::make_pair(start,tmp_list));
+        nodes.emplace(start,tmp_list);
     }
 
     // Add the opposite connection (end (to)-> starts)
@@ -59,12 +68,19 @@ bool Dijkstra::addEdge(cv::Point2d start, cv::Point2d end, double weight){
     }else{
         std::list<distNode_t> tmp_list;
         tmp_list.emplace_back(weight, start);
-        nodes.emplace(std::make_pair(end, tmp_list));
+        nodes.emplace(end, tmp_list);
     }
     return true;
 }
 
-bool Dijkstra::shortesPath(cv::Point2d start, cv::Point2d end, std::vector<cv::Point2d>& best_path)
+/*!
+  * @brief Finds the shortest path with Dijkstra algorithm
+  * @param[in]  cv::Point2d start   start point 
+  * @param[in]  cv::Point2d end     end point
+  * @param[in/out]  std::vector<cv::Point2d>& best_path resulting best path
+  * @return[bool] false if no path is found, true otherwise
+  */
+bool Dijkstra::shortesPath(const cv::Point2d start, const cv::Point2d end, std::vector<cv::Point2d>& best_path) const
 {
     // Create a prority queue
     std::priority_queue<distNode_t, std::vector<distNode_t>, std::greater<distNode_t> > pq;
@@ -95,26 +111,46 @@ bool Dijkstra::shortesPath(cv::Point2d start, cv::Point2d end, std::vector<cv::P
 
         pq.pop(); // pop the current_node
         
-        for(auto it = nodes[current_node].begin(); it != nodes[current_node].end(); it++){
+        // Iterate all connections
+        for(auto it = nodes.at(current_node).begin(); it != nodes.at(current_node).end(); it++){
             double weight = it->first;
             cv::Point2d adj_node = it->second;
 
+            /* Check if there is a shorter path until this node */
             if(dist[adj_node] > dist[current_node] + weight){
                 dist[adj_node] = dist[current_node] + weight;
                 best_paretn[adj_node].x = current_node.x;
                 best_paretn[adj_node].y = current_node.y;
-                pq.push(std::make_pair(dist[adj_node], adj_node));
+                pq.emplace(std::make_pair(dist[adj_node], adj_node));
             }
         }
     }
     if(best_paretn[end] == end){
-        return false;
+        return false; // Return false is found no connections
     }
+    std::vector<cv::Point2d> tmp_best_path;
+    /* construct a path from end to start */
     cv::Point2d parent = end;
     while(parent != start){
-        best_path.emplace_back(parent);
+        tmp_best_path.emplace_back(parent);
         parent = best_paretn[parent];
     }
-    best_path.emplace_back(start);
+    tmp_best_path.emplace_back(start);
+
+    /* Flip the path, and check if the last point in best_path is equal to the start point of new path */
+    for(auto it_bp = tmp_best_path.rbegin(); it_bp != tmp_best_path.rend(); it_bp++){
+        if(it_bp == tmp_best_path.rbegin()){
+            if(best_path.size() != 0){
+                if(*it_bp != best_path[best_path.size() - 1]){
+                    best_path.emplace_back(*it_bp);
+                }
+            }else{
+                best_path.emplace_back(*it_bp);
+            }
+        }else{
+            best_path.emplace_back(*it_bp);
+        }
+            
+    }
     return true;
 }

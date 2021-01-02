@@ -11,7 +11,9 @@
 
 #define MAIN_DEFINED
 
-// Plot vector of points //
+/*!
+ * @brief Polt class sampled points
+!*/
 void Sbmp::plot_points() const
 {
     auto axes = CvPlot::makePlotAxes();
@@ -24,10 +26,12 @@ void Sbmp::plot_points() const
     cv::Mat mat = axes.render(800, 800);
     cv::imshow("mywindow", mat);
     cv::waitKey();
-    cv::destroyWindow("mywindow");
+    // cv::destroyWindow("mywindow");
 }
 
-// Plot a graph end the best path //
+/*!
+ * @brief Polt the graph, the best path and the obstacles
+!*/
 void Sbmp::plot_paths(const std::vector<cv::Point2d>& best_path, const std::vector<std::vector<cv::Point2d> >& obstacles) const{
     auto axes = CvPlot::makePlotAxes();
 
@@ -59,9 +63,13 @@ void Sbmp::plot_paths(const std::vector<cv::Point2d>& best_path, const std::vect
     cv::Mat mat = axes.render(1000, 1000);
     cv::imshow("mywindow", mat);
     cv::waitKey();
-    cv::destroyWindow("mywindow");
+    // cv::destroyWindow("mywindow");
 }
-
+/*!
+ * @brief Check if a segment intersect with obstacles
+ * @param[in] const std::vector<cv::Point2d> segment    vector of 2 points
+ * @param[in] const std::vector<std::vector<cv::Point2d> >& obstacles   obstacles
+!*/
 bool doIntersectWithObstacles(const std::vector<cv::Point2d> segment, const std::vector<std::vector<cv::Point2d> >& obstacles){
     Intersections intersections;
     for(auto itvvp = obstacles.begin(); itvvp != obstacles.end(); itvvp++){ //Iterate for each obstacle
@@ -101,7 +109,15 @@ Sbmp::Sbmp(/* args */)
 Sbmp::~Sbmp()
 {
 }
-void Sbmp::sample(unsigned int N_points, double size_x=1, double size_y=1, sample_type st){
+
+/*!
+ * @brief Start sampling
+ * @param[in] const unsigned int N_points     Number of points to sample
+ * @param[in] const double size_x=1           X width of sampled map
+ * @param[in] const double size_y=1           Y height of sampled map
+ * @param[in] const sample_type st            sample type
+!*/
+void Sbmp::sample(const unsigned int N_points,const double size_x=1,const double size_y=1,const sample_type st){
     if(st == halton_sampling){
         sample_points = s.generate_N_Halton_points_multithread(N_points,this->N_jobs); //Generate N_points in 2D space normalized between (0,0) and (1,1)
         if(size_x != 1 || size_y != 1){ //Check is a resize is needed
@@ -115,7 +131,12 @@ void Sbmp::sample(unsigned int N_points, double size_x=1, double size_y=1, sampl
         sample_points = s.generate_N_rnd_points(N_points, size_x, size_y); //Generate N_points in 2D space normalized between (0,0) and (size_x,size_y)
     }
 }
-void Sbmp::erase_sample_inside_obstacles(std::vector<std::vector<cv::Point2d> >& obstacles){
+
+/*!
+ * @brief Erase sampled points inside obstacles
+ * @param[in] const std::vector<std::vector<cv::Point2d> >& obstacles Obstacles
+!*/
+void Sbmp::erase_sample_inside_obstacles(const std::vector<std::vector<cv::Point2d> >& obstacles){
     for(auto itvp=sample_points.begin(); itvp != sample_points.end(); itvp++){ // Iterate all sample points
         for(auto itvvp = obstacles.begin(); itvvp != obstacles.end(); itvvp++){ // Iterate all obstacles
             std::vector<cv::Point2f> tmp_obstacle_f(itvvp->begin(), itvvp->end());
@@ -127,7 +148,13 @@ void Sbmp::erase_sample_inside_obstacles(std::vector<std::vector<cv::Point2d> >&
         }
     }
 }
-void Sbmp::create_graph(unsigned int N_neighbours, std::vector<std::vector<cv::Point2d> >& obstacles){
+
+/*!
+ * @brief Create a graph of points
+ * @param[in] const unsigned int N_neighbours     Number of points neighbours 
+ * @param[in] const std::vector<std::vector<cv::Point2d> >& obstacles Obstacles
+!*/
+void Sbmp::create_graph(const unsigned int N_neighbours, const std::vector<std::vector<cv::Point2d> >& obstacles){
 
     /********** Start kd-tree construction and search **********/
     cv::Mat_<float> features(0, 2);
@@ -162,13 +189,35 @@ void Sbmp::create_graph(unsigned int N_neighbours, std::vector<std::vector<cv::P
     }
     /********** End graph creation **********/
 }
-bool Sbmp::find_shortest_path(cv::Point2d start_point, cv::Point2d end_point, std::vector<cv::Point2d>& best_path){
+
+/*!
+ * @brief Find shortest path with Dijkstra
+ * @param[in]  cv::Point2d start   start point 
+ * @param[in]  cv::Point2d end     end point
+ * @param[in/out]  std::vector<cv::Point2d>& best_path resulting best path
+ * @return[bool] false if no path is found, true otherwise
+!*/
+bool Sbmp::find_shortest_path(const cv::Point2d start_point,const cv::Point2d end_point, std::vector<cv::Point2d>& best_path)const{
     return d.shortesPath(start_point, end_point, best_path);
 }
+
+/*!
+ * @brief Add a custom point to sampled points
+ * @param[in]  cv::Point2d pt   cusotm point 
+!*/
 void Sbmp::add_custom_point(cv::Point2d pt){
     sample_points.emplace_back(pt);
 }
-void Sbmp::find_discardable_points(std::vector<cv::Point2d>& best_path, unsigned int start_index, unsigned int end_index, std::vector<std::vector<cv::Point2d> >& obstacles, std::vector<cv::Point2d>& discarded_points){
+
+/*!
+ * @brief Find best path discardable points
+ * @param[in]  const std::vector<cv::Point2d>& best_path    best path
+ * @param[in]  const unsigned int start_index               start index of best_path
+ * @param[in]  const unsigned int end_index                 end index of best_path
+ * @param[in]  const std::vector<std::vector<cv::Point2d> >& obstacles  obstacles
+ * @param[out] std::vector<cv::Point2d>& discarded_points   discardable points
+!*/
+void Sbmp::find_discardable_points(const std::vector<cv::Point2d>& best_path,const unsigned int start_index, const unsigned int end_index, const std::vector<std::vector<cv::Point2d> >& obstacles, std::vector<cv::Point2d>& discarded_points)const{
     if(end_index - start_index < 2){
         return;
     }
@@ -185,7 +234,13 @@ void Sbmp::find_discardable_points(std::vector<cv::Point2d>& best_path, unsigned
         return;
     }
 }
-void Sbmp::best_path_optimizer(std::vector<cv::Point2d>& best_path, std::vector<std::vector<cv::Point2d> >& obstacles){
+
+/*!
+ * @brief Optimize best path
+ * @param[in]  std::vector<cv::Point2d>& best_path    best path
+ * @param[in]  const std::vector<std::vector<cv::Point2d> >& obstacles  obstacles
+!*/
+void Sbmp::best_path_optimizer(std::vector<cv::Point2d>& best_path,const std::vector<std::vector<cv::Point2d> >& obstacles)const{
     std::vector<cv::Point2d> discarded_points;
     do{
         discarded_points.clear();
@@ -328,9 +383,13 @@ int main(int argc, char *argv[]){
 
     /********** Sampling **********/
     auto time_sampling_start = std::chrono::high_resolution_clock::now();
-    sbmp.sample(N_points, borders[1].x, borders[2].y);
+    // sbmp.sample(N_points, borders[1].x, borders[2].y);
+    // sbmp.sample(N_points, 1, 1);
+    sbmp.sample(N_points, 1.0, 1.0, random_sampling);
+    // sbmp.plot_points();
     sbmp.add_custom_point(cv::Point2d(0,0));
     sbmp.add_custom_point(cv::Point2d(1,1));
+    // obstacles.clear();
     sbmp.erase_sample_inside_obstacles(obstacles);
     auto time_sampling_end = std::chrono::high_resolution_clock::now();
     /********** End sampling **********/
@@ -362,6 +421,9 @@ int main(int argc, char *argv[]){
 
     // Plot path
     sbmp.plot_paths(best_path, obstacles);
+    // sbmp.plot_points();
+    return 0;
+
     
     sbmp.best_path_optimizer(best_path, obstacles);
     sbmp.plot_paths(best_path, obstacles);

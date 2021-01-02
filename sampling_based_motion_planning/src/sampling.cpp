@@ -21,14 +21,26 @@ void* thread_body(void* _args){
     return 0;
 }
 
-
-cv::Point2d Sampling::generate_rnd_point(const int max_X, const int max_Y){
-    double x = double(rand() * double(max_X/RAND_MAX));
-    double y = double(rand() * double(max_Y/RAND_MAX));
+/*!
+  * @brief Generate one random cv::Point2d point
+  * @param[in]  const int max_X     max value for x
+  * @param[in]  const int max_Y     max value for y
+  * @return[cv::Point2d] the random cv::Point2d point
+  */
+cv::Point2d Sampling::generate_rnd_point(const int max_X, const int max_Y) const{
+    double x = double(double(rand()) * double(max_X/double(RAND_MAX)));
+    double y = double(double(rand()) * double(max_Y/double(RAND_MAX)));
     return cv::Point2d(x,y);
 }
 
-std::vector<cv::Point2d> Sampling::generate_N_rnd_points(const int N, const int max_X, const int max_Y){
+/*!
+  * @brief Generate N random cv::Point2d points
+  * @param[in]  const int N         Number of points
+  * @param[in]  const int max_X     max value for x
+  * @param[in]  const int max_Y     max value for y
+  * @return[std::vector<cv::Point2d>] A vector with N random points
+  */
+std::vector<cv::Point2d> Sampling::generate_N_rnd_points(const int N, const int max_X, const int max_Y) const{
     std::vector<cv::Point2d> rnd_points;
     for(int i = 0; i < N; i++){
         rnd_points.emplace_back(this->generate_rnd_point(max_X, max_Y));
@@ -36,7 +48,13 @@ std::vector<cv::Point2d> Sampling::generate_N_rnd_points(const int N, const int 
     return rnd_points;
 }
 
-std::vector<cv::Point2d> Sampling::generate_N_Halton_points(const int N, const int start){
+/*!
+  * @brief Generate N Halton cv::Point2d points
+  * @param[in]  const int N         Number of points
+  * @param[in]  const int start     Halton start value
+  * @return[std::vector<cv::Point2d>] A vector with N Halton points
+  */
+std::vector<cv::Point2d> Sampling::generate_N_Halton_points(const int N, const int start) const{
     
     double *num_halton[N];
     std::vector<cv::Point2d> points;
@@ -51,8 +69,16 @@ std::vector<cv::Point2d> Sampling::generate_N_Halton_points(const int N, const i
     return points;
 }
 
-std::vector<cv::Point2d> Sampling::generate_N_Halton_points_multithread(const int N, const int N_jobs = 1){
+/*!
+  * @brief Generate N Halton cv::Point2d points, using multiple threads
+  * @param[in]  const int N             Number of points
+  * @param[in]  const int N_jobs = 1    Number of threads
+  * @return[std::vector<cv::Point2d>] A vector with N Halton points
+  */
+std::vector<cv::Point2d> Sampling::generate_N_Halton_points_multithread(const int N, const int N_jobs = 1) const{
     
+    std::vector<cv::Point2d> points;
+
     pthread_t* threads = new pthread_t[N_jobs];
 
     thread_args_t* thread_args = new thread_args_t[N_jobs];
@@ -81,15 +107,15 @@ std::vector<cv::Point2d> Sampling::generate_N_Halton_points_multithread(const in
         int ret = pthread_create(&threads[i], NULL, thread_body, &thread_args[i]);
         if(ret){
             std::cout<<"[ERROR] Sampling::generate_N_Halton_points_multithread unable to create thread, error :"<<ret<<std::endl;
+            return points;
         }
     }
-
-    std::vector<cv::Point2d> points;
     
     for(int i = 0; i < N_jobs; i++){
         int ret = pthread_join(threads[i], NULL);
         if(ret){
             std::cout<<"[ERROR] Sampling::generate_N_Halton_points_multithread unable to join thread error :"<<ret<<std::endl;
+            return points;
         }else{
             points.insert(points.end(), thread_args[i].points.begin(), thread_args[i].points.end());
         }

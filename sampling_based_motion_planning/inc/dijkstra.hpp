@@ -12,10 +12,11 @@ public:
     std::map<cv::Point2d, std::list<distNode_t> > nodes;
 
     Dijkstra(); //Costructor
+    ~Dijkstra();
 
-    bool addEdge(cv::Point2d start, cv::Point2d end, double weight);
+    bool addEdge(const cv::Point2d start, const cv::Point2d end, const double weight);
 
-    bool shortesPath(cv::Point2d start, cv::Point2d end, std::vector<cv::Point2d>& best_path);
+    bool shortesPath(const cv::Point2d start, const cv::Point2d end, std::vector<cv::Point2d>& best_path) const;
 
     void print() const;
 };

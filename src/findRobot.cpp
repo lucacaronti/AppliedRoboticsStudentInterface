@@ -2,7 +2,7 @@
 #include <math.h>
 #include "utils.hpp"
 
-// #define DEBUG_ACTIVE
+#define DEBUG_ACTIVE
 // #define MAIN_ACTIVE // remember to change also the CmakeList.txt
 
 /*!
@@ -72,7 +72,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
 
     /* approximate contours */
     for(itvp = blue_contours.begin(); itvp != blue_contours.end(); itvp ++){
-        cv::approxPolyDP(*itvp, *itvp, 5, true);
+        cv::approxPolyDP(*itvp, *itvp, 9, true);
         polygons_counter++;
     }
 
@@ -131,7 +131,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     /* colculate theta */
-    theta = atan2(cx-vertex.x, cy-vertex.y);
+    theta = atan2(vertex.y - cy, vertex.x - cx);
     x = cx;
     y = cy;
 

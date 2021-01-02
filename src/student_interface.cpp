@@ -245,57 +245,89 @@ namespace student {
     sbmp.best_path_optimizer(best_path, obstacle_list_d);
     sbmp.plot_paths(best_path, obstacle_list_d);
 
-    DubinsCurve dc;
-    dc.set_k(50);
-    dc.add_start_data(best_path[0].x, best_path[0].y, theta);
-    dc.add_final_data(best_path[best_path.size()-1].x, best_path[best_path.size()-1].y, M_PI_2);
-    for(auto it = best_path.begin() + 1; it != best_path.end() - 1; it++){
-        dc.add_middle_points(it->x, it->y);
+    // DubinsCurve dc;
+    // dc.set_k(50);
+    // std::cout<<theta<<std::endl;
+    // dc.add_start_data(best_path[0].x, best_path[0].y, theta);
+    // dc.add_final_data(best_path[best_path.size()-1].x, best_path[best_path.size()-1].y, M_PI_2);
+    // for(auto it = best_path.begin() + 1; it != best_path.end() - 1; it++){
+    //     dc.add_middle_points(it->x, it->y);
+    // }
+    // dc.solver(3,16);
+    // dc.plot();
+
+    std::vector<cv::Point2d> mission_1_points = {start_point_d, victims_center[1], victims_center[3], victims_center[4], victims_center[5], gate_center};
+    std::vector<cv::Point2d> mission_1_path;
+    for(auto it_m1p = mission_1_points.begin(); it_m1p != mission_1_points.end() - 1; it_m1p++){
+      std::vector<cv::Point2d> tmp_mission_1_path;
+      if(!sbmp.find_shortest_path(*it_m1p, *(it_m1p+1), tmp_mission_1_path)){
+        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+      }
+      sbmp.best_path_optimizer(tmp_mission_1_path, obstacle_list_d);
+      if(mission_1_path.size() != 0 && (mission_1_path[mission_1_path.size()-1] == tmp_mission_1_path[0])){
+        mission_1_path.insert(mission_1_path.end(), tmp_mission_1_path.begin()+1, tmp_mission_1_path.end());
+      }else{
+        mission_1_path.insert(mission_1_path.end(), tmp_mission_1_path.begin(), tmp_mission_1_path.end());
+      }
     }
-    dc.solver(3,16);
-    dc.plot();
+    sbmp.plot_paths(mission_1_path, obstacle_list_d);
 
+    for(auto it = mission_1_path.begin(); it != mission_1_path.end(); it++){
+      cout<<it->x<<","<<it->y<<endl;
+    }
+    std::cout<<mission_1_path.size()<<std::endl;
 
-    /* Calculate path considering the victims */
-    // Victim 1
-    best_path.clear();
-    std::cout<<start_point_d.x<<","<<start_point_d.y<<" "<<victims_center[1].x<<","<<victims_center[1].y<<std::endl;
-    if(!sbmp.find_shortest_path(start_point_d, victims_center[1], best_path))
-        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
-    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
-    sbmp.plot_paths(best_path, obstacle_list_d);
+    DubinsCurve dc_mission_1;
+    dc_mission_1.set_k(50);
+    std::cout<<theta<<std::endl;
+    dc_mission_1.add_start_data(mission_1_path[0].x, mission_1_path[0].y, theta);
+    dc_mission_1.add_final_data(mission_1_path[mission_1_path.size()-1].x, mission_1_path[mission_1_path.size()-1].y, M_PI_2);
+    for(auto it = mission_1_path.begin() + 1; it != mission_1_path.end() - 1; it++){
+        dc_mission_1.add_middle_points(it->x, it->y);
+    }
+    dc_mission_1.solver(3,16);
+    dc_mission_1.plot();
 
-    //Victim 3
-    std::cout<<victims_center[1].x<<","<<victims_center[1].y<<" "<<victims_center[3].x<<","<<victims_center[3].y<<std::endl;
-    best_path.clear();
-    if(!sbmp.find_shortest_path(victims_center[1], victims_center[3], best_path))
-        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
-    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
-    sbmp.plot_paths(best_path, obstacle_list_d);
+    // /* Calculate path considering the victims */
+    // // Victim 1
+    // best_path.clear();
+    // std::cout<<start_point_d.x<<","<<start_point_d.y<<" "<<victims_center[1].x<<","<<victims_center[1].y<<std::endl;
+    // if(!sbmp.find_shortest_path(start_point_d, victims_center[1], best_path))
+    //     std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    // sbmp.plot_paths(best_path, obstacle_list_d);
 
-    //Victim 4
-    std::cout<<victims_center[3].x<<","<<victims_center[3].y<<" "<<victims_center[4].x<<","<<victims_center[4].y<<std::endl;
-    best_path.clear();
-    if(!sbmp.find_shortest_path(victims_center[3], victims_center[4], best_path))
-        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
-    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
-    sbmp.plot_paths(best_path, obstacle_list_d);
+    // //Victim 3
+    // std::cout<<victims_center[1].x<<","<<victims_center[1].y<<" "<<victims_center[3].x<<","<<victims_center[3].y<<std::endl;
+    // best_path.clear();
+    // if(!sbmp.find_shortest_path(victims_center[1], victims_center[3], best_path))
+    //     std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    // sbmp.plot_paths(best_path, obstacle_list_d);
 
-    //Victim 5
-    std::cout<<victims_center[4].x<<","<<victims_center[4].y<<" "<<victims_center[5].x<<","<<victims_center[5].y<<std::endl;
-    best_path.clear();
-    if(!sbmp.find_shortest_path(victims_center[4], victims_center[5], best_path))
-        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
-    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
-    sbmp.plot_paths(best_path, obstacle_list_d);
+    // //Victim 4
+    // std::cout<<victims_center[3].x<<","<<victims_center[3].y<<" "<<victims_center[4].x<<","<<victims_center[4].y<<std::endl;
+    // best_path.clear();
+    // if(!sbmp.find_shortest_path(victims_center[3], victims_center[4], best_path))
+    //     std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    // sbmp.plot_paths(best_path, obstacle_list_d);
 
-    //Gate
-    std::cout<<victims_center[5].x<<","<<victims_center[5].y<<" "<<gate_center.x<<","<<gate_center.y<<std::endl;
-    best_path.clear();
-    if(!sbmp.find_shortest_path(victims_center[5], gate_center, best_path))
-        std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
-    // sbmp.best_path_optimizer(best_path, obstacle_list_d);
-    sbmp.plot_paths(best_path, obstacle_list_d);
+    // //Victim 5
+    // std::cout<<victims_center[4].x<<","<<victims_center[4].y<<" "<<victims_center[5].x<<","<<victims_center[5].y<<std::endl;
+    // best_path.clear();
+    // if(!sbmp.find_shortest_path(victims_center[4], victims_center[5], best_path))
+    //     std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    // sbmp.plot_paths(best_path, obstacle_list_d);
+
+    // //Gate
+    // std::cout<<victims_center[5].x<<","<<victims_center[5].y<<" "<<gate_center.x<<","<<gate_center.y<<std::endl;
+    // best_path.clear();
+    // if(!sbmp.find_shortest_path(victims_center[5], gate_center, best_path))
+    //     std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+    // // sbmp.best_path_optimizer(best_path, obstacle_list_d);
+    // sbmp.plot_paths(best_path, obstacle_list_d);
 
 
    
