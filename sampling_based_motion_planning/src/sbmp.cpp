@@ -117,13 +117,13 @@ Sbmp::~Sbmp()
  * @param[in] const double size_y=1           Y height of sampled map
  * @param[in] const sample_type st            sample type
 !*/
-void Sbmp::sample(const unsigned int N_points,const double size_x=1,const double size_y=1,const sample_type st){
+void Sbmp::sample(const unsigned int N_points, const double size_min=0, const double size_x=1,const double size_y=1,const sample_type st){
     if(st == halton_sampling){
         sample_points = s.generate_N_Halton_points_multithread(N_points,this->N_jobs); //Generate N_points in 2D space normalized between (0,0) and (1,1)
         if(size_x != 1 || size_y != 1){ //Check is a resize is needed
             for(auto it = sample_points.begin(); it != sample_points.end(); it++){
-                it->x *= size_x;
-                it->y *= size_y;
+                it->x = it->x * (size_x-size_min) + size_min;
+                it->y = it->y * (size_y-size_min) + size_min;
             }
         }
     }

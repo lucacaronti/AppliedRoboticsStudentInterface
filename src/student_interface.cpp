@@ -13,7 +13,8 @@
 #include <pthread.h>
 #include <mutex>
 
-#define MISSION_2
+// #define MISSION_2
+#define MISSION_1
 
 # define Njobs 4
 
@@ -472,7 +473,7 @@ namespace student {
 
     Sbmp sbmp;
     unsigned int N_sample = 5000;
-    sbmp.sample(N_sample, double(resize_borders[1].x), double(resize_borders[2].y));
+    sbmp.sample(N_sample, double(resize_borders[0].x), double(resize_borders[1].x), double(resize_borders[2].y));
     sbmp.add_custom_point(start_point_d);
     for(auto it_vc = victims_center.begin(); it_vc != victims_center.end(); it_vc++){
       sbmp.add_custom_point(it_vc->second);

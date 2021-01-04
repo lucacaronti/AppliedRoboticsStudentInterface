@@ -22,7 +22,7 @@ public:
     /* Methods */
     Sbmp();
     ~Sbmp();
-    void sample(const unsigned int N_points, const double size_x, const double size_y, const sample_type st=halton_sampling);
+    void sample(const unsigned int N_points,const double size_min, const double size_x, const double size_y, const sample_type st=halton_sampling);
     void add_custom_point(cv::Point2d pt);
     void erase_sample_inside_obstacles(const std::vector<std::vector<cv::Point2d> >& obstacles);
     void create_graph(const unsigned int N_neighbours, const std::vector<std::vector<cv::Point2d> >& obstacles);
