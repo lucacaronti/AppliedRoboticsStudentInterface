@@ -335,20 +335,20 @@ void generate_angles_with_range(vector<double>& angles, double theta0, double h,
 void DubinsCurve::add_middle_points(double px, double py){
     middle_points.emplace_back(Point2d(px,py));
 }
-bool DubinsCurve::solver(int m, int k){
+tuple<bool, double> DubinsCurve::solver(int m, int k){
+    double l_value = INFINITY;
     for(int i = 0 ; i < m ; i++){
-        double l_value;
         vector<pair<int, curve> > tmp_multi_curve; 
         l_value = L(0, middle_points.size() + 1, middle_points, x0, y0, th0, xf, yf, thf, kmax, multi_curve,tmp_multi_curve,i, k);
         multi_curve.clear();
         multi_curve = tmp_multi_curve;
-        cout<<"With m = "<<i<<" -> L = "<<l_value<<endl;
+        // cout<<"With m = "<<i<<" -> L = "<<l_value<<endl;
     }
     for(auto it_mc = multi_curve.begin(); it_mc != multi_curve.end(); it_mc++){
         if(it_mc->first < 0)
-            return false;
+            return make_tuple(false, l_value);
     }
-    return true;
+    return make_tuple(true, l_value);
 }
 
 // Compute the distance of subset path. Save also the found curves

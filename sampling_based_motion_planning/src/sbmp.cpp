@@ -137,16 +137,24 @@ void Sbmp::sample(const unsigned int N_points,const double size_x=1,const double
  * @param[in] const std::vector<std::vector<cv::Point2d> >& obstacles Obstacles
 !*/
 void Sbmp::erase_sample_inside_obstacles(const std::vector<std::vector<cv::Point2d> >& obstacles){
+    std::vector<cv::Point2d> sample_points_ok;
     for(auto itvp=sample_points.begin(); itvp != sample_points.end(); itvp++){ // Iterate all sample points
+        bool is_ok = true;
         for(auto itvvp = obstacles.begin(); itvvp != obstacles.end(); itvvp++){ // Iterate all obstacles
-            std::vector<cv::Point2f> tmp_obstacle_f(itvvp->begin(), itvvp->end());
+            std::vector<cv::Point2f> tmp_obstacle_f;
+            for(auto it_ob = itvvp->begin(); it_ob != itvvp->end(); it_ob++){
+                tmp_obstacle_f.emplace_back(float(it_ob->x), float(it_ob->y));
+            }
             if(cv::pointPolygonTest(tmp_obstacle_f, cv::Point2f(float(itvp->x), float(itvp->y)), false) != -1){ // Check is point is inside the polygon
-                sample_points.erase(itvp); // Erase the point
+                is_ok = false;
                 break; // Stop che for loop
             }
-
         }
+        if(is_ok)
+            sample_points_ok.push_back(*itvp);
     }
+    this->sample_points.clear();
+    this->sample_points = sample_points_ok;
 }
 
 /*!
@@ -200,6 +208,24 @@ void Sbmp::create_graph(const unsigned int N_neighbours, const std::vector<std::
 bool Sbmp::find_shortest_path(const cv::Point2d start_point,const cv::Point2d end_point, std::vector<cv::Point2d>& best_path)const{
     return d.shortesPath(start_point, end_point, best_path);
 }
+bool Sbmp::find_shortest_path_and_optimized(const std::vector<cv::Point2d> points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const{
+    for(auto it_p = points.begin(); it_p != points.end() - 1; it_p++){
+        std::vector<cv::Point2d> tmp_path;
+        if(!this->find_shortest_path(*it_p, *(it_p+1), tmp_path)){
+            return false;
+        }
+        // this->plot_paths(tmp_path, obstacle_list);
+        this->best_path_optimizer(tmp_path, obstacle_list);
+        // this->plot_paths(tmp_path, obstacle_list);
+        if(best_path.size() != 0 && (best_path[best_path.size()-1] == tmp_path[0])){
+          best_path.insert(best_path.end(), tmp_path.begin()+1, tmp_path.end());
+        }else{
+          best_path.insert(best_path.end(), tmp_path.begin(), tmp_path.end());
+        }
+    }
+    return true;
+}
+
 
 /*!
  * @brief Add a custom point to sampled points

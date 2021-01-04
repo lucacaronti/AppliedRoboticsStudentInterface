@@ -94,7 +94,7 @@ public:
   void add_start_data(double x0, double y0, double th0);
   void add_final_data(double xf, double yf, double thf);
   void add_middle_points(double px, double py);
-  bool solver(int m, int k); 
+  tuple<bool, double> solver(int m, int k); 
   void plot() const;
   void getPath(curve c, Path &path);
   Path computePath();
