@@ -13,10 +13,31 @@
 #include <pthread.h>
 #include <mutex>
 
+
+// #define MISSION_1
 // #define MISSION_2
-#define MISSION_1
+#define MISSION_2_fast
 
 # define Njobs 4
+
+double computeLength(cv::Point2d currentPoint, cv::Point2d finalPoint,float theta, int val){
+  DubinsCurve dc;
+  dc.set_k(50);
+  dc.add_start_data(currentPoint.x, currentPoint.y, theta);
+  dc.add_final_data(finalPoint.x, finalPoint.y, M_PI_2);
+  
+  double length;
+  bool ret;
+  tie(ret, length) = dc.solver(1,16);
+  if(!ret){
+    cout<<"Error in dubins solver"<<endl;
+    return 0;
+  }
+
+  /* Print information */
+  cout<<" distance to "<< val <<": "<< length <<endl;
+  return length;
+}
 
 class VictimPath{
   public:
@@ -558,6 +579,76 @@ namespace student {
     path = dc_mission_2.computePath();
     #endif
     /*** END MISSION 2 ***/
+
+    #ifdef MISSION_2_fast
+    
+    std::vector<cv::Point2d> mission_2_points;
+    std::vector<cv::Point2d> mission_2_path;
+
+    double best_len, len, vict_gate, cur_gate;
+    cv::Point2d currentPoint;
+    cv::Point2d best_point;
+
+    mission_2_points.emplace_back(start_point_d);
+
+    while(mission_2_points.back()!=gate_center){
+
+      best_len = 1000;
+      for(auto it_m2p = victims_center.begin(); it_m2p != victims_center.end(); it_m2p++){
+        currentPoint = mission_2_points.back();
+
+        if(find(mission_2_points.begin(), mission_2_points.end(), it_m2p->second) == mission_2_points.end()){      
+
+          len = computeLength(currentPoint, it_m2p->second, theta, it_m2p->first);
+          cur_gate = computeLength(currentPoint, gate_center, theta, 99);
+          vict_gate = computeLength(it_m2p->second, gate_center, theta, 99);
+
+          if(len==0 || cur_gate==0 || vict_gate==0){
+            std::cout<<"Mission 2: Error in compute length"<<std::endl;
+            return false;
+          }
+
+          if(len < best_len && vict_gate < cur_gate*1.2){
+            best_len = len;
+            best_point = it_m2p->second;
+            cout << "next best: " << it_m2p->first << endl;
+          }
+          cout << endl;
+
+        }
+      }
+
+      if(best_point == currentPoint){
+        mission_2_points.emplace_back(gate_center);
+      }
+      else{
+        mission_2_points.emplace_back(best_point);
+      }
+      cout << "-----------------------" << endl;
+    }
+
+    cout << "BEST SEQUENCE FOUND" << endl;
+
+    if(!sbmp.find_shortest_path_and_optimized(mission_2_points, obstacle_list_d, mission_2_path)){
+      std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
+      return false;
+    }
+    sbmp.plot_paths(mission_2_path, obstacle_list_d);
+
+    DubinsCurve dc_mission_2;
+    dc_mission_2.set_k(50);
+    dc_mission_2.add_start_data(start_point_d.x, start_point_d.y, theta);
+    dc_mission_2.add_final_data(gate_center.x, gate_center.y, M_PI_2);
+    for(auto it = mission_2_path.begin() + 1; it != mission_2_path.end() - 1; it++){
+        dc_mission_2.add_middle_points(it->x, it->y);
+    }
+    dc_mission_2.solver(2,16);
+    dc_mission_2.plot();
+    path = dc_mission_2.computePath();
+    
+    #endif
+
+
     
     return true;
  
