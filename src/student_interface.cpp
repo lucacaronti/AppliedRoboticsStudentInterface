@@ -428,7 +428,8 @@ namespace student {
   bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list,  const std::vector<std::pair<int,Polygon>>& victim_list,  const Polygon& gate, const float x, const float y, const float theta,  Path& path, const std::string& config_folder){
     std::cout<<"[STUDENT] : planPath"<<std::endl;
 
-    auto resize_obstacle_list = resizeObstacles(obstacle_list,65);
+    auto resize_obstacle_list = resizeObstacles(obstacle_list,60);
+    auto resize_borders = resizeBorders(borders,70);
 
     /* Convert obstacle type into std::vector<cv::Point2d> */
     std::vector<std::vector<cv::Point2d> > obstacle_list_d;
@@ -471,7 +472,7 @@ namespace student {
 
     Sbmp sbmp;
     unsigned int N_sample = 5000;
-    sbmp.sample(N_sample, double(borders[1].x), double(borders[2].y));
+    sbmp.sample(N_sample, double(resize_borders[1].x), double(resize_borders[2].y));
     sbmp.add_custom_point(start_point_d);
     for(auto it_vc = victims_center.begin(); it_vc != victims_center.end(); it_vc++){
       sbmp.add_custom_point(it_vc->second);
