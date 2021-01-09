@@ -457,12 +457,23 @@ namespace student {
     return student_findRobot(img_in, scale, triangle, x, y, theta, config_folder);
   }
   
-
+  /*!
+  * Plan a safe and fast path in the arena
+  * @param[in]  borders        border of the arena [m]
+  * @param[in] obstacle_list  list of obstacle polygon [m]
+  * @param[in] victim_list    list of pair victim_id and polygon [m]
+  * @param[in] gate           polygon representing the gate [m]
+  * @param[in] x              x position of the robot in the arena reference system
+  * @param[in] y              y position of the robot in the arena reference system
+  * @param[in] theta          yaw of the robot in the arena reference system
+  * @param[out] path          Output path of planned path
+  * @param[in]  config_folder  A custom string from config file.
+  */
   bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list,  const std::vector<std::pair<int,Polygon>>& victim_list,  const Polygon& gate, const float x, const float y, const float theta,  Path& path, const std::string& config_folder){
     std::cout<<"[STUDENT] : planPath"<<std::endl;
 
-    auto resize_obstacle_list = resizeObstacles(obstacle_list,60);
-    auto resize_borders = resizeBorders(borders,70);
+    auto resize_obstacle_list = resizeObstacles(obstacle_list,90); //robot_size=100 is better
+    auto resize_borders = resizeBorders(borders,90); //robot_size=100 is better
 
     /* Convert obstacle type into std::vector<cv::Point2d> */
     std::vector<std::vector<cv::Point2d> > obstacle_list_d;

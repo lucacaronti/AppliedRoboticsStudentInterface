@@ -208,15 +208,22 @@ void Sbmp::create_graph(const unsigned int N_neighbours, const std::vector<std::
 bool Sbmp::find_shortest_path(const cv::Point2d start_point,const cv::Point2d end_point, std::vector<cv::Point2d>& best_path)const{
     return d.shortesPath(start_point, end_point, best_path);
 }
-bool Sbmp::find_shortest_path_and_optimized(const std::vector<cv::Point2d> points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const{
+
+/*!
+ * @brief Find best path and optimize it
+ * @param[in]  const std::vector<cv::Point2d>& points    Points to connect with path
+ * @param[in]  const std::vector<cv::Point2d>& best_path    Found best path
+ * @param[out]  const std::vector<std::vector<cv::Point2d> >& obstacles  obstacles
+!*/
+bool Sbmp::find_shortest_path_and_optimized(const std::vector<cv::Point2d>& points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const{
     for(auto it_p = points.begin(); it_p != points.end() - 1; it_p++){
         std::vector<cv::Point2d> tmp_path;
         if(!this->find_shortest_path(*it_p, *(it_p+1), tmp_path)){
             return false;
         }
-        // this->plot_paths(tmp_path, obstacle_list);
+        this->plot_paths(tmp_path, obstacle_list);
         this->best_path_optimizer(tmp_path, obstacle_list);
-        // this->plot_paths(tmp_path, obstacle_list);
+        this->plot_paths(tmp_path, obstacle_list);
         if(best_path.size() != 0 && (best_path[best_path.size()-1] == tmp_path[0])){
           best_path.insert(best_path.end(), tmp_path.begin()+1, tmp_path.end());
         }else{
@@ -268,17 +275,26 @@ void Sbmp::find_discardable_points(const std::vector<cv::Point2d>& best_path,con
 !*/
 void Sbmp::best_path_optimizer(std::vector<cv::Point2d>& best_path,const std::vector<std::vector<cv::Point2d> >& obstacles)const{
     std::vector<cv::Point2d> discarded_points;
+    std::vector<cv::Point2d> new_best_path;
     do{
         discarded_points.clear();
+        new_best_path.clear();
         this->find_discardable_points(best_path,0, best_path.size()-1, obstacles, discarded_points);
-        for(auto it_wp = discarded_points.begin(); it_wp != discarded_points.end(); it_wp++){
-            for(auto it_bp = best_path.begin(); it_bp != best_path.end(); it_bp++){
+        for(auto it_bp = best_path.begin(); it_bp != best_path.end(); it_bp++){
+            bool is_ok = true;
+            for(auto it_wp = discarded_points.begin(); it_wp != discarded_points.end(); it_wp++){
                 if(*it_wp == *it_bp){
                     best_path.erase(it_bp);
+                    is_ok = false;
                     break;
                 }
             }
+            if(is_ok){
+                new_best_path.emplace_back(*it_bp);
+            }
         }
+        best_path.clear();
+        best_path = new_best_path;
     } while (!discarded_points.empty());
     
 }

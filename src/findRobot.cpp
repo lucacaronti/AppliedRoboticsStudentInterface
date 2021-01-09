@@ -51,7 +51,7 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
     #endif
 
     /* define low and high blue thresold values */
-    cv::Scalar blueHSV_L(105,40,40);
+    cv::Scalar blueHSV_L(105,50,50);
     cv::Scalar blueHSV_H(125,255,255);
     cv::Mat blue_mask;
 
@@ -60,6 +60,22 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
 
     #ifdef DEBUG_ACTIVE
     cv::imshow("Blue mask", blue_mask);
+    cv::waitKey();
+    #endif
+
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3,3)); // create kernel
+    
+    cv::erode(blue_mask, blue_mask, element);
+    
+    #ifdef DEBUG_ACTIVE
+    cv::imshow("Blue_mask_erosion", blue_mask);
+    cv::waitKey();
+    #endif
+
+    cv::dilate(blue_mask, blue_mask, element);
+
+    #ifdef DEBUG_ACTIVE
+    cv::imshow("Blue_mask_dilatation", blue_mask);
     cv::waitKey();
     #endif
 
@@ -76,32 +92,21 @@ bool student_findRobot(const cv::Mat& img_in, const double scale, Polygon& trian
         polygons_counter++;
     }
 
-    /* if there are more than one polygon so there is an arror.
-     * FUTURE_IMPLEMENTATION: choose the biggest one
-    */
-    if(polygons_counter != 1){
-        std::cout<<"[ERROR] Found "<<polygons_counter<<" polygons"<<std::endl;
+    /* Find a polygon with 3 corners */
+    std::vector<cv::Point> robot;
+    for(auto it_bc = blue_contours.begin(); it_bc != blue_contours.end(); it_bc++){
+        if(it_bc->size() == 3){
+            robot = *it_bc;
+        }
+    }
+    if(robot.size() != 3){
+        std::cout<<"[ERROR] No robot found"<<std::endl;
         return false;
     }
-
-    int corner_counter = 0;
-    std::vector<cv::Point>::iterator itp;
-
-    /* count the number of polygon's corners */
-    for(itp = blue_contours[0].begin(); itp != blue_contours[0].end(); itp ++){
-        corner_counter++;
-    }
-
-    /* if corner are more then 3 so there is an error */
-    if(corner_counter != 3){
-        std::cout<<"[ERROR] Found "<<corner_counter<<" corners"<<std::endl;
-        return false;
-    }
-
-    /* save the polygon data into triangle variable (scaling them) */
     for(int i = 0 ; i < 3 ; i++){
-        triangle.emplace_back(blue_contours[0][i].x/scale, blue_contours[0][i].y/scale);
+        triangle.emplace_back(robot[i].x/scale, robot[i].y/scale);
     }
+
     Point P1,P2,P3;
     P1 = triangle[0];
     P2 = triangle[1];

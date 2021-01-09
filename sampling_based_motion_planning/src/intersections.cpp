@@ -87,10 +87,10 @@ int orientation(Point2d p, Point2d q, Point2d r)
 { 
     // See https://www.geeksforgeeks.org/orientation-3-ordered-points/ 
     // for details of below formula. 
-    int val = (q.y - p.y) * (r.x - q.x) - 
+    double val = (q.y - p.y) * (r.x - q.x) - 
               (q.x - p.x) * (r.y - q.y); 
   
-    if (val == 0) return 0;  // colinear 
+    if (abs(val) < 1e-5) return 0;  // colinear 
   
     return (val > 0)? 1: 2; // clock or counterclock wise 
 } 

@@ -29,7 +29,9 @@ bool student_processMap::processMap(const cv::Mat& img_in, const double scale, s
     cv::cvtColor(img_in, imgHSV, cv::COLOR_BGR2HSV); // convert BGR into HSV colorspace
 
     // low and high green thresold values
-    cv::Scalar greenHSV_L(52,40,40);
+    // cv::Scalar greenHSV_L(52,40,40);
+    // cv::Scalar greenHSV_H(72,255,255);
+    cv::Scalar greenHSV_L(32,40,40);
     cv::Scalar greenHSV_H(72,255,255);
 
     #ifdef BLUE_GATE

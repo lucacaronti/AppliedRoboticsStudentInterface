@@ -23,6 +23,7 @@ public:
     void create_graph(const unsigned int N_neighbours, const std::vector<std::vector<cv::Point2d> >& obstacles);
     bool find_shortest_path(const cv::Point2d start_point, const cv::Point2d end_point, std::vector<cv::Point2d>& best_path)const;
     void best_path_optimizer(std::vector<cv::Point2d>& best_path, const std::vector<std::vector<cv::Point2d> >& obstacles)const;
+    bool find_shortest_path_and_optimized(const std::vector<cv::Point2d>& points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const;
     void plot_points() const;
     void plot_paths(const std::vector<cv::Point2d>& best_path, const std::vector<std::vector<cv::Point2d> >& obstacles) const;
 
@@ -43,7 +44,7 @@ Start sampling
 
 ##### Description
 
-Points are generated with `sample_type` method (See `class Sampling` description for more details), and then are resized accordin do `size_x` and `size_y`.
+Points are generated with `sample_type` method (See [sampling.md](sampling.md) description for more details), and then are resized accordin do `size_x` and `size_y`.
 
 ---
 
@@ -72,7 +73,7 @@ Create a graph of points
 * `const std::vector<std::vector<cv::Point2d> >& obstacles` Obstacles
 
 ##### Description
-* First operation done is create a kd-tree with all points. This allows a fast search for points neighbours. The function utilize `cv::flann` library. In our test, a good number of neighbours is 4. 
+* First operation done is to create a kd-tree with all points. This allows a fast search for points neighbours. The function utilize `cv::flann` library. In our test, a good number of neighbours is 4. 
 * Then for each point and its neighbours a connection is created, and if doesn't intersect with obstacles it is added to Dijkstra graph.
 
 ---
@@ -89,7 +90,15 @@ Find shortest path with Dijkstra
 * `bool` false if no path is found, true otherwise
 
 ##### Description
-To see a more accurate description see Dijkstra class
+This function finds the shortest path between two points. To see a more accurate description of the algorithm used see [Dijkstra class](dijkstra.md).
+<p float="float">
+      <img src="./images/shortest_path_1.png" width="230">
+      <img src="./images/shortest_path_2.png" width="230">
+      <img src="./images/shortest_path_3.png" width="230">
+      <img src="./images/shortest_path_4.png" width="230">
+      <img src="./images/shortest_path_5.png" width="230">
+      <img src="./images/shortest_path_6.png" width="230">
+<p!>
 
 ---
 
@@ -101,6 +110,34 @@ Optimize best path
 * `const std::vector<std::vector<cv::Point2d> >& obstacles`  obstacles
 
 ##### Description
+
+Optimze the given path, checking to not intersect with obstacles
+
+<p float="float">
+      <img src="./images/shortest_path_optm_1.png" width="230">
+      <img src="./images/shortest_path_optm_2.png" width="230">
+      <img src="./images/shortest_path_optm_3.png" width="230">
+      <img src="./images/shortest_path_optm_4.png" width="230">
+      <img src="./images/shortest_path_optm_5.png" width="230">
+      <img src="./images/shortest_path_optm_6.png" width="230">
+<p!>
+
+---
+
+#### `bool Sbmp::find_shortest_path_and_optimized(const std::vector<cv::Point2d>& points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const;`
+
+##### Parameters
+* `std::vector<cv::Point2d>& points [in]`    Points to connect with path
+* `const std::vector<std::vector<cv::Point2d> >& obstacles [in[`  obstacles
+* `std::vector<cv::Point2d>& best_path [out]`    Found best path
+
+##### Description
+
+Combine the functions `Sbmp::find_shortest_path` and `Sbmp::best_path_optimizer`. In addiction, it get as input direclty a vector of points to connect. The following images represents the result (without and with optimization).
+<p float="float">
+      <img src="./images/shortest_path.png" width="230">
+      <img src="./images/shortest_path_optimized.png" width="230">
+<p!>
 
 ---
 

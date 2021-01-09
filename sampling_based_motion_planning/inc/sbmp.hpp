@@ -27,7 +27,7 @@ public:
     void erase_sample_inside_obstacles(const std::vector<std::vector<cv::Point2d> >& obstacles);
     void create_graph(const unsigned int N_neighbours, const std::vector<std::vector<cv::Point2d> >& obstacles);
     bool find_shortest_path(const cv::Point2d start_point, const cv::Point2d end_point, std::vector<cv::Point2d>& best_path)const;
-    bool find_shortest_path_and_optimized(const std::vector<cv::Point2d> points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const;
+    bool find_shortest_path_and_optimized(const std::vector<cv::Point2d>& points,const std::vector<std::vector<cv::Point2d> >& obstacle_list, std::vector<cv::Point2d>& best_path)const;
     void best_path_optimizer(std::vector<cv::Point2d>& best_path, const std::vector<std::vector<cv::Point2d> >& obstacles)const;
     void plot_points() const;
     void plot_paths(const std::vector<cv::Point2d>& best_path, const std::vector<std::vector<cv::Point2d> >& obstacles) const;

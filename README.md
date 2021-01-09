@@ -7,6 +7,12 @@
 
 ---
 
+<p float="left">
+   <img src="./doc/images/file_diagram.png" width="1000">
+<p!>
+
+---
+
  Main Functions                        | Descriptions                                
 --------------------------------|---------------------------------------------
 `void `[`loadImage`](#namespacestudent_1a3117c968a47bf95f86bdb813a3b64e56)`(cv::Mat & img_out,const std::string & config_folder)`            | This function can be used to replace the simulator camera and test the developed pipeline on a set of custom image.
@@ -16,7 +22,8 @@
 `void `[`findPlaneTransform`](#namespacestudent_1a528d33658d0d4d982a46f18b7abb4a70)`(const cv::Mat & cam_matrix,const cv::Mat & rvec,const cv::Mat & tvec,const std::vector< cv::Point3f > & object_points_plane,const std::vector< cv::Point2f > & dest_image_points_plane,cv::Mat & plane_transf,const std::string & config_folder)`            | Calculates a perspective transform from four pairs of the corresponding points. 
 `void `[`unwarp`](#namespacestudent_1a6b8caf348979f55e58a75193233c219d)`(const cv::Mat & img_in,cv::Mat & img_out,const cv::Mat & transf,const std::string & config_folder)`            | Applies a perspective transformation to an image. 
 `bool `[`processMap`](#namespacestudent_1a153a17ef667d7c10b8f33d815b9bc1bc)`(const cv::Mat & img_in,const double scale,std::vector< Polygon > & obstacle_list,std::vector< std::pair< int, Polygon >> & victim_list,Polygon & gate,const std::string & config_folder)`            | Process the image to detect victims, obtacles and the gate 
-`bool `[`findRobot`](#namespacestudent_1afd56b779672a672e15ac45dc927b8a6b)`(const cv::Mat & img_in,const double scale,Polygon & triangle,double & x,double & y,double & theta,const std::string & config_folder)`            | Process the image to detect the robot pose 
+`bool `[`findRobot`](#namespacestudent_1afd56b779672a672e15ac45dc927b8a6b)`(const cv::Mat & img_in,const double scale,Polygon & triangle,double & x,double & y,double & theta,const std::string & config_folder)`            | Process the image to detect the robot pose
+` bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list,  const std::vector<std::pair<int,Polygon>>& victim_list,  const Polygon& gate, const float x, const float y, const float theta,  Path& path, const std::string& config_folder)` | Plan the path according to chosen mission.
 
 Support functions | Descriptions                                
 --------------------------------|---------------------------------------------
@@ -266,6 +273,41 @@ Start image:
 9. Theta is calculated
 <img src="./doc/images/find_robot_4.png" width="400">
 
+---
+
+#### `bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list,  const std::vector<std::pair<int,Polygon>>& victim_list,  const Polygon& gate, const float x, const float y, const float theta,  Path& path, const std::string& config_folder);`
+
+Plan the path according to chosen mission.
+##### Parameters
+
+* `borders [in]`        border of the arena [m]
+* `obstacle_list [in]`  list of obstacle polygon [m]
+* `victim_list [in]`    list of pair victim_id and polygon [m]
+* `gate [in]`           polygon representing the gate [m]
+* `x [in]`              x position of the robot in the arena reference system
+* `y [in]`              y position of the robot in the arena reference system
+* `theta [in]`          yaw of the robot in the arena reference system
+* `path [out]`          output path of planned path
+* `config_folder [in]`  A custom string from config file.
+##### Returns
+* `bool` true if path is computed correctly, false otherwise
+
+##### Description
+To chose the mission to implment, uncomment one of the following `#define` and recompile the project:
+* `#define MISSION_1`
+* `#define MISSION_2`
+* `#define MISSION_2_fast`
+
+__MISSION 1:__ Victim are chosen in cresent order wrt their number. All victims are chosen.
+__MISSION 2:__ 
+* Consists on a brute force search, for each victims combination a path length is found
+* For each number of victims a best result is taken (i.e. one path that picks one victim, one for 2 victims, one for 3 victim etc.)
+* Starting with one victim with length $L$, if the path picking up one more victim length is $\le L + (10\% \cdot L)$ this path is taken. The procedure is repeated, but at each iteration the margin in divided by two $(10\% \to 5\% \to 2.5\% \to \text{etc})$
+
+__MISSION 2 FAST:__
+
+
+To see how the path is computed see [this document](doc/sbmp.md)
 ---
 
 ## Support functions
