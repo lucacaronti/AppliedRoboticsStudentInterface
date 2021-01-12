@@ -33,7 +33,6 @@ cv::Mat rotate(const cv::Mat src, int angle){
 std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFolder){
     std::vector<std::pair<cv::Mat, int> > templates;
 
-    bool debug = false; // choose if enable debug or not
     int rotation_degrees = 30;
 
     for (int i = 0; i < 6; i++)
@@ -42,18 +41,14 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
         std::string imageName = homePath + "/workspace/project/src/" + templatesFolder + "/" + std::to_string(i) + ".png";
         cv::Mat numTemplate = cv::imread(imageName);
 
-        // cv::flip(numTemplate, numTemplate, 1);
-
         for (int j = 0; j < 360/rotation_degrees; j++)
         {
             cv::Mat numTemplate_rotated = rotate(numTemplate, rotation_degrees*j);
 
-            if (debug){
-                #ifdef DEBUG_ACTIVE
-                cv::imshow("Rotated templates",numTemplate_rotated);
-                cv::waitKey(0);
-                #endif       
-            }
+            #ifdef DEBUG_ACTIVE
+            cv::imshow("Rotated templates",numTemplate_rotated);
+            cv::waitKey(0);
+            #endif            
 
             templates.emplace_back(numTemplate_rotated, i);
             
