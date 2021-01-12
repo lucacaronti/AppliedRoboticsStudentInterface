@@ -13,6 +13,17 @@
 
 ---
 
+In this file there are only the main functions. To see more deeply how they are implmented consult:
+
+* [Extrinsic Calibration doc](doc/extrinsicCalib.md)
+* [Process Map doc](doc/processMap.md)
+* [Sampling doc](doc/samplig.md)
+* [Sampling Based Motion Planning doc](doc/sbmp.md)
+* [Find Robot doc](doc/findRobot.md)
+* [Dijkstra doc](doc/dijkstra.md)
+
+---
+
  Main Functions                        | Descriptions                                
 --------------------------------|---------------------------------------------
 `void `[`loadImage`](#namespacestudent_1a3117c968a47bf95f86bdb813a3b64e56)`(cv::Mat & img_out,const std::string & config_folder)`            | This function can be used to replace the simulator camera and test the developed pipeline on a set of custom image.
@@ -24,18 +35,6 @@
 `bool `[`processMap`](#namespacestudent_1a153a17ef667d7c10b8f33d815b9bc1bc)`(const cv::Mat & img_in,const double scale,std::vector< Polygon > & obstacle_list,std::vector< std::pair< int, Polygon >> & victim_list,Polygon & gate,const std::string & config_folder)`            | Process the image to detect victims, obtacles and the gate 
 `bool `[`findRobot`](#namespacestudent_1afd56b779672a672e15ac45dc927b8a6b)`(const cv::Mat & img_in,const double scale,Polygon & triangle,double & x,double & y,double & theta,const std::string & config_folder)`            | Process the image to detect the robot pose
 ` bool planPath(const Polygon& borders, const std::vector<Polygon>& obstacle_list,  const std::vector<std::pair<int,Polygon>>& victim_list,  const Polygon& gate, const float x, const float y, const float theta,  Path& path, const std::string& config_folder)` | Plan the path according to chosen mission.
-
-Support functions | Descriptions                                
---------------------------------|---------------------------------------------
-`bool `[`readCSV`](#extrinsicCalib_readCSV)`(std::fstream &file, std::vector<std::string> &string_vector, int &elements_for_line)`            |  This function raed a CSV file and returns a string vector with all elements and a variable 
-`void `[`writePointsCSV`](#extrinsicCalib_writePointsCSV)`(std::fstream &file, std::vector<cv::Point2f> points)`            |  Writes points into CSV file 
-`void `[`CallBackFunc`](#extrinsicCalib_CallBackFunc)`(int event, int x, int y, int flags, void *userdata)`            |  Call back funtion when mouse key is pressed on the image 
-`void `[`selectNpoints`](#extrinsicCalib_selectNpoints)`(const cv::Mat &image, std::vector<cv::Point2f> &allPoints, int num_points_to_take)`            |  This function allow to select with mouse pointer N points inside the image
-`void `[`detectSingleDigit`]()`(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int>> templates)` | Match templates to recognize digit inside the green circles of the image
-`void `[`detectDigits`]()`(cv::Mat image, cv::Mat greenObjs)` | Find the countours of single green object to be detected as digit
-`void printPolygonsShapeStat(const std::vector<std::vector<cv::Point> >& _Polygons, const std::string& _name)` | Print the statistics of the polygons shapes
-`double findDistance(const Point& P1, const Point& P2)` | Find the distance between two points
-`Point findVertex(const Point& P1, const Point& P2, const Point& P3)` | Find the vertex of a tringle (if it's equilater return P3)
 
 
 ## Main functions
@@ -95,6 +94,8 @@ Finds arena pose from 3D(object_points)-2D(image_in) point correspondences.
       <img src="doc/images/selectNpoints.png" width="350">
       2. Once N points are been selected, they are saved into CSV file thanks to function `writePointsCSV`
 2. `cv::solvePnp` funtion is called.
+
+__To see a more accurate description consult__ [Extrinsic Calibration doc](doc/extrinsicCalib.md).
 
 ---
 
@@ -172,65 +173,11 @@ Process the image to detect victims, obtacles and the gate
 * `config_folder [in]` A custom string from config file.
 
 ##### Return
-* `bool` True if one gate is found, otherwise return false (NOTE: no check on victim and obstacle number is done)
+* `bool` True if one gate is found, otherwise return false
 
-##### Operations done
-NOTE: if `#define BLUE_GATE` is uncommented so the gate is supposed to be blue, otherwise it's supposed to be green (In the follow description is supposed to be green).
-
-Start image:
-
-<img src="./doc/images/find_robot_1.png" width="400">
-
-1. Colors range are defined (in HSV color space) as follow:
-   * Green ranges
-      * `cv::Scalar greenHSV_L(52,40,40);`
-      * `cv::Scalar greenHSV_H(72,255,255);`
-   * Blue ranges
-      * `cv::Scalar blueHSV_L(105,40,40);`
-      * `cv::Scalar blueHSV_H(125,255,255);`
-   * Red ranges (Note that there are two range for red color, this because in HSV red color is around Hue = $0^\circ$. So in order to take a range of $20^\circ$ there are two ranges, one between $[170^\circ,180^\circ]$ and one between $[0^\circ, 10^\circ]$)
-      * `cv::Scalar redHSV_L_1(170,40,40);`
-      * `cv::Scalar redHSV_H_1(180,255,255);`
-      * `cv::Scalar redHSV_L_2(0,40,40);`
-      * `cv::Scalar redHSV_H_2(10,255,255);`
-
-2. Apply a mask to the image (Green and Red* in this case)
-   <p float="left">
-      <img src="./doc/images/processMap_greenObjs.png" width="250">
-      <img src="./doc/images/processMap_redObjs.png" width="250">
-   <p!>
-
-   \* For red image, two mask are applied (as described in the previous point) and the a OR is applied to results (with funtion `bitwise_or`) 
-
-3. Detect digit procedure is done:
-   1. `findContours` function is called to find green contours
-
-   2. `approxPolyDP` function is used to approximate contours
-
-   3. Each contour, is has more than 7 sides, is passed to `detectSingleDigit` function. Then the function return the number of detected digit (or -1 if there is an error) and `victim_list` is updated (scaling the polygon points).
-
-4. A kernel is defined as follow:
-   `cv::Mat element = cv::getStructuringElemen (cv::MORPH_RECT, cv::Size(3,3));`
-
-5. An erosion is performed:
-   <p float="left">
-      <img src="./doc/images/processMap_greenObjs_after_erosion.png" width="250">
-      <img src="./doc/images/processMap_redObjs_after_erosion.png" width="250">
-   <p!>
-
-6. A dilation is performed
-   <p float="left">
-      <img src="./doc/images/processMap_greenObjs_after_dilat.png" width="250">
-      <img src="./doc/images/processMap_redObjs_after_dilat.png" width="250">
-   <p!>
-
-7. Countours are found from the new image
-8. An approximatin is performed to contours
-9. Is checked if there are one gate (so in practice is checked if there is one green (or blue is `#define BLUE_GATE` is uncommented) object with 4 sides. If there isn't or there are more than one then funtion return false).
-10. `obstacle_list` and `gate` variables are updated.
-
-Final results (of obstacles and gate detection):
-<img src="./doc/images/processMap_finalResults.png" width="400">
+##### Description 
+Process the image to detect victims, obtacles and the gate. 
+__To see a more accurate description consult__ [Process Map doc](doc/processMap.md).
 
 ---
 
@@ -253,25 +200,9 @@ Process the image to detect the robot pose
 ##### Returns
 * `bool` true if the robot is found, false otherwise.
 
-##### Operations done
-Start image:
-
-<img src="./doc/images/find_robot_1.png" width="400">
-
-1. Image is converted from BGR to HSV color space
-<img src="./doc/images/find_robot_2.png" width="400">
-
-2. Blue mask is applied
-<img src="./doc/images/find_robot_3.png" width="400">
-
-3. `findContours` function is called to find blue object contours
-4. `approxPolyDB` function is called to approximate contours
-5. If there is only one object with 3 sides (triangle) so funtion can continue, othrewise the function return `false`. One future implementation can be that also if there are more than one blue object, the biggest one will be selected (if it's a triangle).
-6. Triangle coordinates are scaled and saved
-7. The center of triangle is found
-8. `findVertex` funtion is called in order to find the vertex of triangle
-9. Theta is calculated
-<img src="./doc/images/find_robot_4.png" width="400">
+##### Descriptions
+Process the image to detect the robot pose, finding the center and the orientation of the robot.
+__To see a more accurate description consult__ [Find Robot doc](doc/findRobot.md).
 
 ---
 
@@ -307,132 +238,9 @@ __MISSION 2:__
 __MISSION 2 FAST:__
 
 
-To see how the path is computed see [this document](doc/sbmp.md)
----
-
-## Support functions
-
----
-#### `bool `[`readCSV`](#extrinsicCalib_readCSV)`(std::fstream &file, std::vector<std::string> &string_vector, int &elements_for_line)`
-
-This function raed a CSV file and returns a string vector with all elements and a variable that indicates how many elements there are for each line.
-##### Parameters
-
-* `file [in]`                festream file to read
-* `string_vector [out]`       vector with all elements read
-* `elements_for_line [out]`   number of elements for line
-##### Returns
-* `(bool)` True if there aren't errors, false otherwise
+__To see how the path is computed see__ [Sampling Based Motion Planning doc](doc/sbmp.md)
 
 ---
 
-#### `void `[`writePointsCSV`](#extrinsicCalib_writePointsCSV)`(std::fstream &file, std::vector<cv::Point2f> points)`
-
-Writes points into CSV file
-##### Prameters
-
-* `file [out]` file in which save the points
-* `points [in]` vector of points
-
----
-
-#### `void `[`CallBackFunc`](#extrinsicCalib_CallBackFunc)`(int event, int x, int y, int flags, void *userdata)`
-
-Call back funtion when mouse key is pressed on the image
-##### Parameters
-
-* `event [in]` type of event
-* `x [in]` x coordinate of pressed point
-* `y [in]` y coordinate of pressed point
-* `userdata [in/out]` user data (mouseCallbackUserData_t)
-
----
-
-#### `void `[`selectNpoints`](#extrinsicCalib_selectNpoints)`(const cv::Mat &image, std::vector<cv::Point2f> &allPoints, int num_points_to_take)`
-This function allows to select with mouse pointer N pints inside the image
-
-##### Parameters
-* `image [in]` image in which select points
-* `allPoints [out]` vector of points 2D selected
-* `num_points_to_take [in]` number of points to slect
-
----
-
-#### `void printPolygonsShapeStat(const std::vector<std::vector<cv::Point> >& _Polygons, const std::string& _name)`
-Print the statistics of the polygons shapes
-
-##### Parameters
-* `_Polygons [in]` The vector with Polygons inside
-* `_name [in]` The name of Polygons to print
-
----
-
-#### `double findDistance(const Point& P1, const Point& P2)`
-Find the distance between two points
-
-##### Parameters
-* `PI [in]` firt point
-* `PI [in]` Second point
-
-##### Return
-* `double` the distance between points
-
----
-
-#### `Point findVertex(const Point& P1, const Point& P2, const Point& P3)`
-Find the vertex of a tringle (if it's equilater return P3)
-
-##### Parameters
-* `PI [in]` first point
-* `P2 [in]` second point
-* `P3 [in]` third point
-
-##### Return
-* `Point` the vertex point
-
----
-
-#### `void `[`detectDigits`]()`(cv::Mat image, cv::Mat greenObjs)`
-
-Find the countours of single green object to be detected as digit
-
-##### Parameters
-* `image` original image
-* `greenObjs [in]` green objects extracted from the hsv original image
-
-##### Operations done
-1. augment the templates using `augmentTemplates` function
-2. `findContours` function is called to find green object contours
-3. `approxPolyDB` function is called for every contour found, to approximate contours
-4. `detectSingleDigit` is called to match the contour with the templates
-
----
-
-#### `void `[`detectSingleDigit`]()`(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector<std::pair<cv::Mat, int>> templates)`
 
 
-Match templates to recognize digit inside the green circles of the image
-
-##### Parameters
-* `Rect` bounding box for a green blob
-* `img` original image
-* `greenObjs` green objects extracted from the hsv original image
-* `templates` vector of associated Template-Number
-
-##### Operations done
-1. filter the green mask
-<img src="./doc/images/detect_digits_0.png" width="250">
-
-2. `findContours` function is called
-3. `bitwise_not` is called to generate binary mask with inverted pixels
-<img src="./doc/images/detect_digits_1.png" width="250">
-
-4. `processROI` is called to extract the ROI containing the digit
-<img src="./doc/images/detect_digits_2.png" width="750">
-
-5. scan all the templates and compare them with the ROI. A score is assigned and the higher one is saved.
-<img src="./doc/images/detect_digits_3.png" width="750">
-
----
-
-Generated by [Moxygen](https://sourcey.com/moxygen)

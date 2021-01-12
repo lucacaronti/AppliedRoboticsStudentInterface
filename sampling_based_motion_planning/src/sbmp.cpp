@@ -284,7 +284,7 @@ void Sbmp::best_path_optimizer(std::vector<cv::Point2d>& best_path,const std::ve
             bool is_ok = true;
             for(auto it_wp = discarded_points.begin(); it_wp != discarded_points.end(); it_wp++){
                 if(*it_wp == *it_bp){
-                    best_path.erase(it_bp);
+                    // best_path.erase(it_bp);
                     is_ok = false;
                     break;
                 }
