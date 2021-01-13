@@ -35,10 +35,14 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
 
     int rotation_degrees = 30;
 
+    // relative path of src directory
+    std::string cur = __FILE__;
+    cur.resize(cur.size()-16);
+
     for (int i = 0; i < 6; i++)
     {
-        std::string homePath = std::getenv("HOME");
-        std::string imageName = homePath + "/workspace/project/src/" + templatesFolder + "/" + std::to_string(i) + ".png";
+        std::string imageName =  cur + templatesFolder + "/" + std::to_string(i) + ".png";
+        
         cv::Mat numTemplate = cv::imread(imageName);
 
         for (int j = 0; j < 360/rotation_degrees; j++)
@@ -48,7 +52,7 @@ std::vector<std::pair<cv::Mat, int> > augmentTemplates(std::string templatesFold
             #ifdef DEBUG_ACTIVE
             cv::imshow("Rotated templates",numTemplate_rotated);
             cv::waitKey(0);
-            #endif            
+            #endif
 
             templates.emplace_back(numTemplate_rotated, i);
             
@@ -105,7 +109,6 @@ int detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector
     cv::Mat temp;
     for (unsigned int i = 0; i < templates.size(); ++i) {
 
-
         // Match the ROI with the templates
         cv::Mat result;
 
@@ -131,6 +134,7 @@ int detectSingleDigit(cv::Rect Rect, cv::Mat img, cv::Mat greenObjs, std::vector
 
 }
 
+#ifdef MAIN_ACTIVE
 void detectDigits(cv::Mat image, cv::Mat greenObjs){
     std::vector<std::pair<cv::Mat, int> > templates = augmentTemplates("template");
 
@@ -148,7 +152,6 @@ void detectDigits(cv::Mat image, cv::Mat greenObjs){
     }
 }
 
-#ifdef MAIN_ACTIVE
 int main(int argc, char* argv[]){
     if(argc != 2){
         std::cout<<"[ERROR] Argument error, usage: ./detectDigits image_name.jpg"<<std::endl;

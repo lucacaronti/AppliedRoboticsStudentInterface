@@ -229,14 +229,23 @@ To chose the mission to implment, uncomment one of the following `#define` and r
 * `#define MISSION_2`
 * `#define MISSION_2_fast`
 
-__MISSION 1:__ Victim are chosen in cresent order wrt their number. All victims are chosen.
-__MISSION 2:__ 
+__MISSION 1:__ 
+Victim are chosen in cresent order wrt their number. All victims are chosen.
+
+__MISSION 2:__
 * Consists on a brute force search, for each victims combination a path length is found
 * For each number of victims a best result is taken (i.e. one path that picks one victim, one for 2 victims, one for 3 victim etc.)
 * Starting with one victim with length $L$, if the path picking up one more victim length is $\le L + (10\% \cdot L)$ this path is taken. The procedure is repeated, but at each iteration the margin in divided by two $(10\% \to 5\% \to 2.5\% \to \text{etc})$
 
 __MISSION 2 FAST:__
 
+* For every victim in the map, compute:
+   - distance from current point to victim $L_{cv}$
+   - distance from current point to gate $L_{cg}$
+   - distance from victim to gate $L_{vg}$
+* Select as next point the one that is closer to the current point ($L_{cv}$) and does not worsen the distance to the gate by more than 10\%, ie $$L_{vg} < L_{cg} + (10\% \cdot L_{cg} )$$.
+* If no point satisfy this condition, the gate point is choosen as final point.
+* This procedure is repeated until the gate is selected.
 
 __To see how the path is computed see__ [Sampling Based Motion Planning doc](doc/sbmp.md)
 

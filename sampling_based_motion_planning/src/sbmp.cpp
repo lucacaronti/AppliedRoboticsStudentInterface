@@ -221,9 +221,9 @@ bool Sbmp::find_shortest_path_and_optimized(const std::vector<cv::Point2d>& poin
         if(!this->find_shortest_path(*it_p, *(it_p+1), tmp_path)){
             return false;
         }
-        this->plot_paths(tmp_path, obstacle_list);
+        // this->plot_paths(tmp_path, obstacle_list);
         this->best_path_optimizer(tmp_path, obstacle_list);
-        this->plot_paths(tmp_path, obstacle_list);
+        // this->plot_paths(tmp_path, obstacle_list);
         if(best_path.size() != 0 && (best_path[best_path.size()-1] == tmp_path[0])){
           best_path.insert(best_path.end(), tmp_path.begin()+1, tmp_path.end());
         }else{
