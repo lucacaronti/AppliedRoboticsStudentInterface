@@ -235,15 +235,15 @@ Victim are chosen in cresent order wrt their number. All victims are chosen.
 __MISSION 2:__
 * Consists on a brute force search, for each victims combination a path length is found
 * For each number of victims a best result is taken (i.e. one path that picks one victim, one for 2 victims, one for 3 victim etc.)
-* Starting with one victim with length $L$, if the path picking up one more victim length is $\le L + (10\% \cdot L)$ this path is taken. The procedure is repeated, but at each iteration the margin in divided by two $(10\% \to 5\% \to 2.5\% \to \text{etc})$
+* Starting with one victim with length <img src="https:////i.upmath.me/svg/L"/>, if the path picking up one more victim length is <img src="https://i.upmath.me/svg/%5Cle%20L%20%2B%20(10%5C%25%20%5Ccdot%20L)"/> this path is taken. The procedure is repeated, but at each iteration the margin in divided by two <img src="https://i.upmath.me/svg/(10%5C%25%20%5Cto%205%5C%25%20%5Cto%202.5%5C%25%20%5Cto%20%5Ctext%7Betc%7D)"/>
 
 __MISSION 2 FAST:__
 
 * For every victim in the map, compute:
    - distance from current point to victim <img src="https://i.upmath.me/svg/L_%7Bcv%7D"/>
-   - distance from current point to gate $L_{cg}$
-   - distance from victim to gate $L_{vg}$
-* Select as next point the one that is closer to the current point ($L_{cv}$) and does not worsen the distance to the gate by more than 10\%, ie $$L_{vg} < L_{cg} + (10\% \cdot L_{cg} )$$.
+   - distance from current point to gate <img src="https://i.upmath.me/svg/L_%7Bcg%7D"/>
+   - distance from victim to gate <img src="https://i.upmath.me/svg/L_%7Bvg%7D"/>
+* Select as next point the one that is closer to the current point (<img src="https://i.upmath.me/svg/L_%7Bcv%7D"/>) and does not worsen the distance to the gate by more than 10\%, i.e. <img src="https://i.upmath.me/svg/L_%7Bvg%7D%20%3C%20L_%7Bcg%7D%20%2B%20(10%5C%25%20%5Ccdot%20L_%7Bcg%7D%20)"/>.
 * If no point satisfy this condition, the gate point is choosen as final point.
 * This procedure is repeated until the gate is selected.
 

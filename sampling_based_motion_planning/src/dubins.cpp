@@ -389,7 +389,7 @@ double L(int j, int n, const vector<Point2d>& middle_points,
         firsts_th0.emplace_back(th0); // Set that first thet0 is known
         return minD_j(x0, y0, xf, yf, kmax, firsts_th0, thf, tmp_multi_curve);
     }else{
-        if(j == n-1){
+        if(j == n-1){ // If is the last curve
             vector<double> angles;
             if(m == 0){
                 generate_angles(angles, 2*M_PI/k);
@@ -455,46 +455,44 @@ void DubinsCurve::plot() const{
 
 /*****************************************************************************/
 
-void DubinsCurve::getPath(curve c, Path &path){
-    static double len = 0;
-    int npts = 30;
-    double x, y, th;
-
-    double step = c.L/npts;
-    double s1, s2, s3;
-
-    for(int i = 0; i < floor(c.a1.L/step); i++){
-        s1 = step * i;
-        len += step;
-
-        tie(x, y, th) = circline(s1, c.a1.x0, c.a1.y0, c.a1.th0, c.a1.k);
-        path.points.emplace_back(len,x,y,th,c.a1.k);
-    }
-
-    for(int i = 0; i < floor(c.a2.L/step); i++){
-        s2 =  step * i;
-        len += step;
-
-        tie(x, y, th) = circline(s2, c.a2.x0, c.a2.y0, c.a2.th0, c.a2.k);
-        path.points.emplace_back(len,x,y,th,c.a2.k);
-    }
-
-    for(int i = 0; i < floor(c.a3.L/step); i++){
-        s3 =  step * i;
-        len += step;
-
-        tie(x, y, th) = circline(s3, c.a3.x0, c.a3.y0, c.a3.th0, c.a3.k);
-        path.points.emplace_back(len,x,y,th,c.a3.k);
-    }
-
-}
-
 Path DubinsCurve::computePath(){
 
     Path path;
 
     for(auto itmc = multi_curve.rbegin(); itmc != multi_curve.rend(); itmc++){
-        getPath(itmc->second, path);
+
+        curve c = itmc->second;
+        static double len = 0;
+        int npts = 30;
+        double x, y, th;
+
+        double step = c.L/npts;
+        double s1, s2, s3;
+
+        for(int i = 0; i < floor(c.a1.L/step); i++){
+            s1 = step * i;
+            len += step;
+
+            tie(x, y, th) = circline(s1, c.a1.x0, c.a1.y0, c.a1.th0, c.a1.k);
+            path.points.emplace_back(len,x,y,th,c.a1.k);
+        }
+
+        for(int i = 0; i < floor(c.a2.L/step); i++){
+            s2 =  step * i;
+            len += step;
+
+            tie(x, y, th) = circline(s2, c.a2.x0, c.a2.y0, c.a2.th0, c.a2.k);
+            path.points.emplace_back(len,x,y,th,c.a2.k);
+        }
+
+        for(int i = 0; i < floor(c.a3.L/step); i++){
+            s3 =  step * i;
+            len += step;
+
+            tie(x, y, th) = circline(s3, c.a3.x0, c.a3.y0, c.a3.th0, c.a3.k);
+            path.points.emplace_back(len,x,y,th,c.a3.k);
+        }
+
     }
 
     return path;

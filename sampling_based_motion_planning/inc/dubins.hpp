@@ -96,7 +96,6 @@ public:
   void add_middle_points(double px, double py);
   tuple<bool, double> solver(int m, int k); 
   void plot() const;
-  void getPath(curve c, Path &path);
   Path computePath();
 };
 
