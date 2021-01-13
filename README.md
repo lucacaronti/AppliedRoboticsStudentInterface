@@ -240,7 +240,7 @@ __MISSION 2:__
 __MISSION 2 FAST:__
 
 * For every victim in the map, compute:
-   - distance from current point to victim $L_{cv}$
+   - distance from current point to victim <img src="https://i.upmath.me/svg/L_%7Bcv%7D"/>
    - distance from current point to gate $L_{cg}$
    - distance from victim to gate $L_{vg}$
 * Select as next point the one that is closer to the current point ($L_{cv}$) and does not worsen the distance to the gate by more than 10\%, ie $$L_{vg} < L_{cg} + (10\% \cdot L_{cg} )$$.
