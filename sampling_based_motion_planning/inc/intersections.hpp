@@ -3,9 +3,7 @@
 
 #include <iostream>
 #include <cmath>
-#include <tuple>
 #include <vector>
-#include <assert.h>
 #include <cstdlib>
 #include <ctime>
 
@@ -17,37 +15,8 @@
 using namespace std;
 using namespace cv;
 
-double cross2D(Point2d v1, Point2d v2);
-double dot2D(Point2d v1, Point2d v2);
+bool onSegment(Point2d p, Point2d q, Point2d r) ;
+int orientation(Point2d p, Point2d q, Point2d r) ;
 bool doIntersect(Point2d p1, Point2d q1, Point2d p2, Point2d q2) ;
-bool intersection(Point2d o1, Point2d p1, Point2d o2, Point2d p2);
-
-class Intersections{
-private:
-  double minX, maxX, minY, maxY;
-  double xDiff, yDiff;
-  vector<Point2d> pts;
-  double img_size;
-  
-public:
-  Intersections();
-  ~Intersections();
-  void solve(int mode);
-
-  void set_X(double _minX, double _maxX);
-  void set_Y(double _minY, double _maxY);
-  Point2d random_Point2d();
-  int random_radius();
-
-  bool intersLineLine(vector<Point2d> line_a, vector<Point2d> line_b);
-
-  bool intersCircleLine(Point2d center, int radius, vector<Point2d> line);
-
-  Mat img;
-  void set_plot(double size);
-  Point2d resize(Point2d p);
-  int resize_radius(int r);
-  void plot();
-};
 
 #endif

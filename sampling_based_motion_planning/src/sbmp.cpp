@@ -71,7 +71,7 @@ void Sbmp::plot_paths(const std::vector<cv::Point2d>& best_path, const std::vect
  * @param[in] const std::vector<std::vector<cv::Point2d> >& obstacles   obstacles
 !*/
 bool doIntersectWithObstacles(const std::vector<cv::Point2d> segment, const std::vector<std::vector<cv::Point2d> >& obstacles){
-    Intersections intersections;
+
     for(auto itvvp = obstacles.begin(); itvvp != obstacles.end(); itvvp++){ //Iterate for each obstacle
         for(auto itvp = itvvp->begin(); itvp != itvvp->end(); itvp++){ //Iterate for each face of polygon
             cv::Point2d point_a(itvp->x, itvp->y);
@@ -84,7 +84,6 @@ bool doIntersectWithObstacles(const std::vector<cv::Point2d> segment, const std:
                 point_b.y = (itvp+1)->y;
             }
             std::vector<cv::Point2d> obstacle_face = {point_a, point_b}; // Create polygon face line 
-            // if(intersections.intersLineLine(segment, obstacle_face)){ // Check if intersect
             if(doIntersect(segment[0], segment[1], obstacle_face[0], obstacle_face[1])){
                 return true;
             }

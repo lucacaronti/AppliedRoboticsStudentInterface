@@ -54,3 +54,4 @@ Reduce the borders of the arena by the size of the robot
       <img src="./images/resize_arena.png" width="250">
 <p!>
 
+---
