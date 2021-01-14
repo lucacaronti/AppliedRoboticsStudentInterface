@@ -18,6 +18,11 @@
 // #define MISSION_2
 // #define MISSION_2_fast
 
+// #define THETA_GATE 0 // Rigth side
+#define THETA_GATE M_PI_2 // Top side
+// #define THETA_GATE M_PI // Left side
+// #define THETA_GATE -M_PI_2 // Bottom side
+
 # define Njobs 4
 
 double computeLength(cv::Point2d currentPoint, cv::Point2d finalPoint, float theta, const std::vector<std::vector<cv::Point2d> > obstacles, Sbmp sbmp,  int val){
@@ -32,7 +37,7 @@ double computeLength(cv::Point2d currentPoint, cv::Point2d finalPoint, float the
   DubinsCurve dc;
   dc.set_k(50);
   dc.add_start_data(currentPoint.x, currentPoint.y, theta);
-  dc.add_final_data(finalPoint.x, finalPoint.y, M_PI_2);
+  dc.add_final_data(finalPoint.x, finalPoint.y, THETA_GATE);
   for(auto it_m2p = tmp_path.begin() + 1; it_m2p != tmp_path.end() - 1; it_m2p++){
     dc.add_middle_points(it_m2p->x, it_m2p->y);
   }  
@@ -146,7 +151,7 @@ void* fillDecisionlist_thread(void* _args){
   DubinsCurve dc;
   dc.set_k(50);
   dc.add_start_data(args->start_point.x, args->start_point.y, args->theta);
-  dc.add_final_data(args->end_point.x, args->end_point.y, M_PI_2);
+  dc.add_final_data(args->end_point.x, args->end_point.y, THETA_GATE);
   for(auto it_m2p = tmp_path.begin() + 1; it_m2p != tmp_path.end() - 1; it_m2p++){
     dc.add_middle_points(it_m2p->x, it_m2p->y);
   }
@@ -556,7 +561,7 @@ namespace student {
     DubinsCurve dc_mission_1;
     dc_mission_1.set_k(50);
     dc_mission_1.add_start_data(mission_1_path[0].x, mission_1_path[0].y, theta);
-    dc_mission_1.add_final_data(mission_1_path[mission_1_path.size()-1].x, mission_1_path[mission_1_path.size()-1].y, M_PI_2);
+    dc_mission_1.add_final_data(mission_1_path[mission_1_path.size()-1].x, mission_1_path[mission_1_path.size()-1].y, THETA_GATE);
     for(auto it = mission_1_path.begin() + 1; it != mission_1_path.end() - 1; it++){
         dc_mission_1.add_middle_points(it->x, it->y);
     }

@@ -21,6 +21,8 @@ In this file there are only the main functions. To see more deeply how they are 
 * [Sampling Based Motion Planning doc](doc/sbmp.md)
 * [Find Robot doc](doc/findRobot.md)
 * [Dijkstra doc](doc/dijkstra.md)
+* [Resize doc](doc/resize.md)
+* [Dubins doc](doc/dubins.md)
 
 ---
 
