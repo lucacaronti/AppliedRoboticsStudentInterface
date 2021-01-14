@@ -103,6 +103,11 @@ Solve the multipoint dubins problem using Iterative Dynamic Programming.
     - call function `L` starting from the initial point to iteratively compute the length `l_value` of the multicurve
 * If one curve was not found, return `<false, l_value>`. Otherwise `<true, l_value>`
 
+<p float="left">
+    <img src="./images/dubins_path1.png" width="250">
+    <img src="./images/dubins_dub1.png" width="250">
+<p!>
+
 --- 
 
 #### double L(int j, int n, const vector<Point2d>& middle_points, double x0, double y0, double th0, double xf, double yf, double thf, double kmax,vector<pair<int ,curve> >& multi_curve ,vector<pair<int ,curve> >& tmp_multi_curve , int m, int k);
@@ -131,15 +136,15 @@ Gives the length of the solution, computed in iteratively.
     - If it is the last intermediate point:
         - generate angles depending on the value `m`
         - call `minD_j` to compute the the curve from this point to the final point
-        - `return`
+        - return
     - Call `L` considering the next point `j+1` and save the length in `tmp_length`
     - If it is the first intermediate point:
         -  call `minD_j` to compute the the curve from the initial point to this point and sum `tmp_length` computed before
-        - `return`
+        - return
     - Else:
         - generate angles depending on the value `m`
         - call `minD_j` to compute the the curve from the previous point to this point and sum `tmp_length` computed before
-        - `return`
+        - return
         
 ---
 
