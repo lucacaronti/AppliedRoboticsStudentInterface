@@ -23,6 +23,7 @@ In this file there are only the main functions. To see more deeply how they are 
 * [Dijkstra doc](doc/dijkstra.md)
 * [Resize doc](doc/resize.md)
 * [Dubins doc](doc/dubins.md)
+* [Intersections doc](doc/intersections.md)
 
 ---
 
