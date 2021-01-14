@@ -556,7 +556,7 @@ namespace student {
       std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
       return false;
     }
-    sbmp.plot_paths(mission_1_path, obstacle_list_d);
+    // sbmp.plot_paths(mission_1_path, obstacle_list_d);
 
     DubinsCurve dc_mission_1;
     dc_mission_1.set_k(50);
@@ -566,7 +566,7 @@ namespace student {
         dc_mission_1.add_middle_points(it->x, it->y);
     }
     dc_mission_1.solver(2,16);
-    dc_mission_1.plot();
+    // dc_mission_1.plot();
 
     path = dc_mission_1.computePath();
     cout<<"Path size: " << path.size()<<endl;
@@ -592,7 +592,7 @@ namespace student {
       std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
       return false;
     }
-    sbmp.plot_paths(mission_2_path, obstacle_list_d);
+    // sbmp.plot_paths(mission_2_path, obstacle_list_d);
 
     DubinsCurve dc_mission_2;
     dc_mission_2.set_k(50);
@@ -602,7 +602,7 @@ namespace student {
         dc_mission_2.add_middle_points(it->x, it->y);
     }
     dc_mission_2.solver(2,16);
-    dc_mission_2.plot();
+    // dc_mission_2.plot();
     path = dc_mission_2.computePath();
     #endif
     /*** END MISSION 2 ***/
@@ -660,7 +660,7 @@ namespace student {
       std::cout<<"Path not found, incraese the number of neighbours"<<std::endl;
       return false;
     }
-    sbmp.plot_paths(mission_2_path, obstacle_list_d);
+    // sbmp.plot_paths(mission_2_path, obstacle_list_d);
 
     DubinsCurve dc_mission_2;
     dc_mission_2.set_k(50);
@@ -670,7 +670,7 @@ namespace student {
         dc_mission_2.add_middle_points(it->x, it->y);
     }
     dc_mission_2.solver(2,16);
-    dc_mission_2.plot();
+    // dc_mission_2.plot();
     path = dc_mission_2.computePath();
     
     #endif
